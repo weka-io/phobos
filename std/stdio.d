@@ -484,6 +484,8 @@ Throws: $(D ErrnoException) if the file could not be opened.
  */
     this(string name, in char[] stdioOpenmode = "rb") @safe
     {
+version (LDC) pragma(inline, false);
+
         import std.conv : text;
         import std.exception : errnoEnforce;
 
@@ -581,6 +583,8 @@ Throws: $(D ErrnoException) in case of error.
  */
     version(Posix) void popen(string command, in char[] stdioOpenmode = "r") @safe
     {
+version (LDC) pragma(inline, false);
+
         import std.exception : errnoEnforce;
 
         detach();
@@ -603,6 +607,8 @@ Throws: $(D ErrnoException) in case of error.
 
     package void fdopen(int fd, in char[] stdioOpenmode, string name) @trusted
     {
+version (LDC) pragma(inline, false);
+
         import std.internal.cstring : tempCString;
         import std.exception : errnoEnforce;
 
@@ -656,6 +662,8 @@ Throws: $(D ErrnoException) in case of error.
     version(Windows)
     void windowsHandleOpen(HANDLE handle, in char[] stdioOpenmode)
     {
+version (LDC) pragma(inline, false);
+
         import std.exception : errnoEnforce;
         import std.format : format;
 
@@ -782,6 +790,8 @@ Throws: $(D ErrnoException) on error.
  */
     void close() @trusted
     {
+version (LDC) pragma(inline, false);
+
         import core.stdc.stdlib : free;
         import std.exception : errnoEnforce;
 
@@ -836,6 +846,8 @@ Throws: $(D Exception) if the file is not opened or if the call to $(D fflush) f
  */
     void flush() @trusted
     {
+version (LDC) pragma(inline, false);
+
         import std.exception : enforce, errnoEnforce;
 
         enforce(isOpen, "Attempting to flush() in an unopened file");
@@ -870,6 +882,8 @@ Throws: $(D Exception) if the file is not opened or if the OS call fails.
  */
     void sync() @trusted
     {
+version (LDC) pragma(inline, false);
+
         import std.exception : enforce, errnoEnforce;
 
         enforce(isOpen, "Attempting to sync() an unopened file");
@@ -899,6 +913,7 @@ $(D rawRead) always reads in binary mode on Windows.
  */
     T[] rawRead(T)(T[] buffer)
     {
+version (LDC) pragma(inline, false);
         import std.exception : errnoEnforce;
 
         if (!buffer.length)
@@ -958,6 +973,8 @@ Throws: $(D ErrnoException) if the file is not opened or if the call to $(D fwri
  */
     void rawWrite(T)(in T[] buffer)
     {
+version (LDC) pragma(inline, false);
+
         import std.conv : text;
         import std.exception : errnoEnforce;
 
@@ -1008,19 +1025,27 @@ Throws: $(D Exception) if the file is not opened.
  */
     void seek(long offset, int origin = SEEK_SET) @trusted
     {
+version (LDC) pragma(inline, false);
+
+version (LDC) pragma(inline, false);
+
         import std.exception : enforce, errnoEnforce;
         import std.conv : to, text;
 
         enforce(isOpen, "Attempting to seek() in an unopened file");
         version (Windows)
         {
+version (LDC) pragma(inline, false);
+
             errnoEnforce(fseek(_p.handle, to!int(offset), origin) == 0,
                     "Could not seek in file `"~_name~"'");
         }
         else version (Posix)
         {
             import core.sys.posix.stdio : fseeko, off_t;
-            //static assert(off_t.sizeof == 8);
+            
+version (LDC) pragma(inline, false);
+//static assert(off_t.sizeof == 8);
             errnoEnforce(fseeko(_p.handle, cast(off_t) offset, origin) == 0,
                     "Could not seek in file `"~_name~"'");
         }
@@ -1067,6 +1092,8 @@ Throws: $(D Exception) if the file is not opened.
  */
     @property ulong tell() const @trusted
     {
+version (LDC) pragma(inline, false);
+
         import std.exception : enforce, errnoEnforce;
 
         enforce(isOpen, "Attempting to tell() in an unopened file");
@@ -1121,6 +1148,8 @@ Throws: $(D Exception) if the file is not opened.
  */
     void setvbuf(size_t size, int mode = _IOFBF) @trusted
     {
+version (LDC) pragma(inline, false);
+
         import std.exception : enforce, errnoEnforce;
 
         enforce(isOpen, "Attempting to call setvbuf() on an unopened file");
@@ -1137,6 +1166,8 @@ Throws: $(D Exception) if the file is not opened.
 */
     void setvbuf(void[] buf, int mode = _IOFBF) @trusted
     {
+version (LDC) pragma(inline, false);
+
         import std.exception : enforce, errnoEnforce;
 
         enforce(isOpen, "Attempting to call setvbuf() on an unopened file");
@@ -1210,6 +1241,8 @@ $(UL
     void lock(LockType lockType = LockType.readWrite,
         ulong start = 0, ulong length = 0)
     {
+version (LDC) pragma(inline, false);
+
         import std.exception : enforce, errnoEnforce;
 
         enforce(isOpen, "Attempting to call lock() on an unopened file");
@@ -1242,6 +1275,8 @@ specified file segment was already locked.
     bool tryLock(LockType lockType = LockType.readWrite,
         ulong start = 0, ulong length = 0)
     {
+version (LDC) pragma(inline, false);
+
         import std.exception : enforce, errnoEnforce;
 
         enforce(isOpen, "Attempting to call tryLock() on an unopened file");
@@ -1279,6 +1314,8 @@ Removes the lock over the specified file segment.
  */
     void unlock(ulong start = 0, ulong length = 0)
     {
+version (LDC) pragma(inline, false);
+
         import std.exception : enforce, errnoEnforce;
 
         enforce(isOpen, "Attempting to call unlock() on an unopened file");
@@ -2606,6 +2643,8 @@ $(D Range) that locks the file and allows fast writing to it.
                 isInputRange!A &&
                 !isInfinite!A)
         {
+version (LDC) pragma(inline, false);
+
             import std.exception : errnoEnforce;
 
             alias C = ElementEncodingType!A;
