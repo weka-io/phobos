@@ -588,6 +588,7 @@ unittest
 T errnoEnforce(T, string file = __FILE__, size_t line = __LINE__)
     (T value, lazy string msg = null)
 {
+version(LDC) pragma(inline, true); // Force inlining because of __FILE__ as template parameter.
     if (!value) throw new ErrnoException(msg, file, line);
     return value;
 }
