@@ -1178,6 +1178,7 @@ ptrdiff_t lastIndexOf(Char1, Char2)(const(Char1)[] s, const(Char2)[] sub,
 {
     import std.utf : strideBack;
     import std.conv : to;
+    static import std.uni;
     import std.algorithm : endsWith;
     if (sub.empty)
         return -1;
