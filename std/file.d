@@ -4282,11 +4282,6 @@ string tempDir() @trusted
             DWORD len = GetTempPathW(buf.length, buf.ptr);
             if (len) cache = toUTF8(buf[0 .. len]);
         }
-        else version(Android)
-        {
-            // Don't check for a global temporary directory as
-            // Android doesn't have one.
-        }
         else version(Posix)
         {
             import std.process : environment;
