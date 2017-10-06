@@ -847,10 +847,9 @@ real tan(real x) @trusted pure nothrow @nogc
         jc      trigerr                 ; // x is NAN, infinity, or empty
                                           // 387's can handle subnormals
 SC18:   fptan                           ;
-        fstp    ST(0)                   ; // dump X, which is always 1
         fstsw   AX                      ;
         sahf                            ;
-        jnp     Lret                    ; // C2 = 1 (x is out of range)
+        jnp     Clear1                  ; // C2 = 1 (x is out of range)
 
         // Do argument reduction to bring x into range
         fldpi                           ;
@@ -867,6 +866,10 @@ trigerr:
         fstp    ST(0)                   ; // dump theta
     }
     return real.nan;
+
+Clear1: asm pure nothrow @nogc{
+        fstp    ST(0)                   ; // dump X, which is always 1
+    }
 
 Lret: {}
     }
@@ -894,10 +897,9 @@ Lret: {}
         jnz     trigerr                 ; // x is NAN, infinity, or empty
                                           // 387's can handle subnormals
 SC18:   fptan                           ;
-        fstp    ST(0)                   ; // dump X, which is always 1
         fstsw   AX                      ;
         test    AH,4                    ;
-        jz      Lret                    ; // C2 = 1 (x is out of range)
+        jz      Clear1                  ; // C2 = 1 (x is out of range)
 
         // Do argument reduction to bring x into range
         fldpi                           ;
@@ -915,6 +917,10 @@ trigerr:
         fstp    ST(0)                   ; // dump theta
     }
     return real.nan;
+
+Clear1: asm pure nothrow @nogc{
+        fstp    ST(0)                   ; // dump X, which is always 1
+    }
 
 Lret: {}
     }
@@ -2167,7 +2173,7 @@ L_largenegative:
  *  )
  */
 version(none)
-{   // FIXME: Use of this LLVM intrinsic causes a unit test failure
+{   // LDC FIXME: Use of this LLVM intrinsic causes a unit test failure
     real   exp2(real   x) @safe pure nothrow @nogc { return llvm_exp2(x); }
     ///ditto
     double exp2(double x) @safe pure nothrow @nogc { return llvm_exp2(x); }
@@ -2177,9 +2183,26 @@ version(none)
 else
 {
 
+pragma(inline, true)
 real exp2(real x) @nogc @trusted pure nothrow
 {
-    version(InlineAsm_X86_X87)
+    version(InlineAsm_X86_Any_X87)
+    {
+        if (!__ctfe)
+            return exp2Asm(x);
+        else
+            return exp2Impl(x);
+    }
+    else
+    {
+        return exp2Impl(x);
+    }
+}
+
+version(InlineAsm_X86_Any_X87)
+private real exp2Asm(real x) @nogc @trusted pure nothrow
+{
+    version(D_InlineAsm_X86)
     {
         enum PARAMSIZE = (real.sizeof+3)&(0xFFFF_FFFC); // always a multiple of 4
 
@@ -2265,7 +2288,7 @@ L_was_nan:
             ret PARAMSIZE;
         }
     }
-    else version(InlineAsm_X86_64_X87)
+    else version(D_InlineAsm_X86_64)
     {
         asm pure nothrow @nogc
         {
@@ -2367,81 +2390,84 @@ L_was_nan:
         }
     }
     else
+        static assert(0);
+}
+
+private real exp2Impl(real x) @nogc @trusted pure nothrow
+{
+    // Coefficients for exp2(x)
+    static if (floatTraits!real.realFormat == RealFormat.ieeeQuadruple)
     {
-        // Coefficients for exp2(x)
-        static if (floatTraits!real.realFormat == RealFormat.ieeeQuadruple)
-        {
-            static immutable real[5] P = [
-                9.079594442980146270952372234833529694788E12L,
-                1.530625323728429161131811299626419117557E11L,
-                5.677513871931844661829755443994214173883E8L,
-                6.185032670011643762127954396427045467506E5L,
-                1.587171580015525194694938306936721666031E2L
-            ];
+        static immutable real[5] P = [
+            9.079594442980146270952372234833529694788E12L,
+            1.530625323728429161131811299626419117557E11L,
+            5.677513871931844661829755443994214173883E8L,
+            6.185032670011643762127954396427045467506E5L,
+            1.587171580015525194694938306936721666031E2L
+        ];
 
-            static immutable real[6] Q = [
-                2.619817175234089411411070339065679229869E13L,
-                1.490560994263653042761789432690793026977E12L,
-                1.092141473886177435056423606755843616331E10L,
-                2.186249607051644894762167991800811827835E7L,
-                1.236602014442099053716561665053645270207E4L,
-                1.0
-            ];
-        }
-        else
-        {
-            static immutable real[3] P = [
-                2.0803843631901852422887E6L,
-                3.0286971917562792508623E4L,
-                6.0614853552242266094567E1L,
-            ];
-            static immutable real[4] Q = [
-                6.0027204078348487957118E6L,
-                3.2772515434906797273099E5L,
-                1.7492876999891839021063E3L,
-                1.0000000000000000000000E0L,
-            ];
-        }
-
-        // Overflow and Underflow limits.
-        enum real OF =  16_384.0L;
-        enum real UF = -16_382.0L;
-
-        // Special cases. Raises an overflow or underflow flag accordingly,
-        // except in the case for CTFE, where there are no hardware controls.
-        if (isNaN(x))
-            return x;
-        if (x > OF)
-        {
-            if (__ctfe)
-                return real.infinity;
-            else
-                return real.max * copysign(real.max, real.infinity);
-        }
-        if (x < UF)
-        {
-            if (__ctfe)
-                return 0.0;
-            else
-                return real.min_normal * copysign(real.min_normal, 0.0);
-        }
-
-        // Separate into integer and fractional parts.
-        int n = cast(int) floor(x + 0.5);
-        x -= n;
-
-        // Rational approximation:
-        //  exp2(x) = 1.0 + 2x P(x^^2) / (Q(x^^2) - P(x^^2))
-        const real xx = x * x;
-        const real px = x * poly(xx, P);
-        x = px / (poly(xx, Q) - px);
-        x = 1.0 + ldexp(x, 1);
-
-        // Scale by power of 2.
-        x = ldexp(x, n);
-
-        return x;
+        static immutable real[6] Q = [
+            2.619817175234089411411070339065679229869E13L,
+            1.490560994263653042761789432690793026977E12L,
+            1.092141473886177435056423606755843616331E10L,
+            2.186249607051644894762167991800811827835E7L,
+            1.236602014442099053716561665053645270207E4L,
+            1.0
+        ];
     }
+    else
+    {
+        static immutable real[3] P = [
+            2.0803843631901852422887E6L,
+            3.0286971917562792508623E4L,
+            6.0614853552242266094567E1L,
+        ];
+        static immutable real[4] Q = [
+            6.0027204078348487957118E6L,
+            3.2772515434906797273099E5L,
+            1.7492876999891839021063E3L,
+            1.0000000000000000000000E0L,
+        ];
+    }
+
+    // Overflow and Underflow limits.
+    enum real OF =  16_384.0L;
+    enum real UF = -16_382.0L;
+
+    // Special cases. Raises an overflow or underflow flag accordingly,
+    // except in the case for CTFE, where there are no hardware controls.
+    if (isNaN(x))
+        return x;
+    if (x > OF)
+    {
+        if (__ctfe)
+            return real.infinity;
+        else
+            return real.max * copysign(real.max, real.infinity);
+    }
+    if (x < UF)
+    {
+        if (__ctfe)
+            return 0.0;
+        else
+            return real.min_normal * copysign(real.min_normal, 0.0);
+    }
+
+    // Separate into integer and fractional parts.
+    int n = cast(int) floor(x + 0.5);
+    x -= n;
+
+    // Rational approximation:
+    //  exp2(x) = 1.0 + 2x P(x^^2) / (Q(x^^2) - P(x^^2))
+    const real xx = x * x;
+    const real px = x * poly(xx, P);
+    x = px / (poly(xx, Q) - px);
+    x = 1.0 + ldexp(x, 1);
+
+    // Scale by power of 2.
+    x = ldexp(x, n);
+
+    return x;
 }
 
 }
@@ -2716,7 +2742,7 @@ if (isFloatingPoint!T)
             vf *= F.RECIP_EPSILON;
             ex = vu[F.EXPPOS_SHORT] & F.EXPMASK;
             exp = ex - F.EXPBIAS - T.mant_dig + 1;
-            vu[F.EXPPOS_SHORT] = (~F.EXPMASK & vu[F.EXPPOS_SHORT]) | 0x3FFE;
+            vu[F.EXPPOS_SHORT] = ((-1 - F.EXPMASK) & vu[F.EXPPOS_SHORT]) | 0x3FFE;
         }
         return vf;
     }
@@ -2797,7 +2823,7 @@ if (isFloatingPoint!T)
             ex = vu[F.EXPPOS_SHORT] & F.EXPMASK;
             exp = ((ex - F.EXPBIAS) >> 4) - T.mant_dig + 1;
             vu[F.EXPPOS_SHORT] =
-                cast(ushort)((~F.EXPMASK & vu[F.EXPPOS_SHORT]) | 0x3FE0);
+                cast(ushort)(((-1 - F.EXPMASK) & vu[F.EXPPOS_SHORT]) | 0x3FE0);
         }
         return vf;
     }
@@ -2837,7 +2863,7 @@ if (isFloatingPoint!T)
             ex = vu[F.EXPPOS_SHORT] & F.EXPMASK;
             exp = ((ex - F.EXPBIAS) >> 7) - T.mant_dig + 1;
             vu[F.EXPPOS_SHORT] =
-                cast(ushort)((~F.EXPMASK & vu[F.EXPPOS_SHORT]) | 0x3F00);
+                cast(ushort)(((-1 - F.EXPMASK) & vu[F.EXPPOS_SHORT]) | 0x3F00);
         }
         return vf;
     }
@@ -5273,12 +5299,22 @@ assert(rint(1.1) == 1);
  */
 struct FloatingPointControl
 {
-    alias RoundingMode = uint;
+    alias RoundingMode = uint; ///
 
-    /** IEEE rounding modes.
-     * The default mode is roundToNearest.
-     */
-    version(AArch64)
+    version(StdDdoc)
+    {
+        enum : RoundingMode
+        {
+            /** IEEE rounding modes.
+             * The default mode is roundToNearest.
+             */
+            roundToNearest,
+            roundDown, /// ditto
+            roundUp, /// ditto
+            roundToZero /// ditto
+        }
+    }
+    else version(AArch64)
     {
         enum : RoundingMode
         {
@@ -5329,10 +5365,40 @@ struct FloatingPointControl
         }
     }
 
-    /** IEEE hardware exceptions.
-     *  By default, all exceptions are masked (disabled).
-     */
-    version(AArch64)
+    //// Change the floating-point hardware rounding mode
+    @property void rounding(RoundingMode newMode) @nogc
+    {
+        initialize();
+        setControlState((getControlState() & (-1 - ROUNDING_MASK)) | (newMode & ROUNDING_MASK));
+    }
+
+    /// Returns: the currently active rounding mode
+    @property static RoundingMode rounding() @nogc
+    {
+        return cast(RoundingMode)(getControlState() & ROUNDING_MASK);
+    }
+
+    version(StdDdoc)
+    {
+        enum : uint
+        {
+            /** IEEE hardware exceptions.
+             *  By default, all exceptions are masked (disabled).
+             *
+             *  severeExceptions = The overflow, division by zero, and invalid
+             *  exceptions.
+             */
+            subnormalException,
+            inexactException, /// ditto
+            underflowException, /// ditto
+            overflowException, /// ditto
+            divByZeroException, /// ditto
+            invalidException, /// ditto
+            severeExceptions, /// ditto
+            allExceptions, /// ditto
+        }
+    }
+    else version(AArch64)
     {
         enum : uint
         {
@@ -5341,7 +5407,6 @@ struct FloatingPointControl
             overflowException     = 0x0400,
             divByZeroException    = 0x0200,
             invalidException      = 0x0100,
-            /// Severe = The overflow, division by zero, and invalid exceptions.
             severeExceptions   = overflowException | divByZeroException
                                  | invalidException,
             allExceptions      = severeExceptions | underflowException
@@ -5358,7 +5423,6 @@ struct FloatingPointControl
             overflowException     = 0x0400,
             divByZeroException    = 0x0200,
             invalidException      = 0x0100,
-            /// Severe = The overflow, division by zero, and invalid exceptions.
             severeExceptions   = overflowException | divByZeroException
                                  | invalidException,
             allExceptions      = severeExceptions | underflowException
@@ -5374,7 +5438,6 @@ struct FloatingPointControl
             underflowException    = 0x0020,
             overflowException     = 0x0040,
             invalidException      = 0x0080,
-            /// Severe = The overflow, division by zero, and invalid exceptions.
             severeExceptions   = overflowException | divByZeroException
                                  | invalidException,
             allExceptions      = severeExceptions | underflowException
@@ -5407,7 +5470,6 @@ struct FloatingPointControl
             divByZeroException    = 0x04,
             subnormalException    = 0x02,
             invalidException      = 0x01,
-            /// Severe = The overflow, division by zero, and invalid exceptions.
             severeExceptions   = overflowException | divByZeroException
                                  | invalidException,
             allExceptions      = severeExceptions | underflowException
@@ -5505,13 +5567,6 @@ public:
             setControlState(getControlState() & ~(exceptions & EXCEPTION_MASK));
     }
 
-    //// Change the floating-point hardware rounding mode
-    @property void rounding(RoundingMode newMode) @nogc
-    {
-        initialize();
-        setControlState((getControlState() & ~ROUNDING_MASK) | (newMode & ROUNDING_MASK));
-    }
-
     /// Returns: the exceptions which are currently enabled (unmasked)
     @property static uint enabledExceptions() @nogc
     {
@@ -5520,12 +5575,6 @@ public:
             return (getControlState() & EXCEPTION_MASK) ^ EXCEPTION_MASK;
         else
             return (getControlState() & EXCEPTION_MASK);
-    }
-
-    /// Returns: the currently active rounding mode
-    @property static RoundingMode rounding() @nogc
-    {
-        return cast(RoundingMode)(getControlState() & ROUNDING_MASK);
     }
 
     ///  Clear all pending exceptions, then restore the original exception state and rounding mode.
@@ -5853,9 +5902,9 @@ else
 
 /*********************************
  * Determines if $(D_PARAM x) is NaN.
- * params:
+ * Params:
  *  x = a floating point number.
- * returns:
+ * Returns:
  *  $(D true) if $(D_PARAM x) is Nan.
  */
 bool isNaN(X)(X x) @nogc @trusted pure nothrow
@@ -5941,9 +5990,9 @@ if (isFloatingPoint!(X))
 
 /*********************************
  * Determines if $(D_PARAM x) is finite.
- * params:
+ * Params:
  *  x = a floating point number.
- * returns:
+ * Returns:
  *  $(D true) if $(D_PARAM x) is finite.
  */
 bool isFinite(X)(X x) @trusted pure nothrow @nogc
@@ -5984,9 +6033,9 @@ bool isFinite(X)(X x) @trusted pure nothrow @nogc
  *
  * A normalized number must not be zero, subnormal, infinite nor $(NAN).
  *
- * params:
+ * Params:
  *  x = a floating point number.
- * returns:
+ * Returns:
  *  $(D true) if $(D_PARAM x) is normalized.
  */
 
@@ -6034,9 +6083,9 @@ bool isNormal(X)(X x) @trusted pure nothrow @nogc
  * Subnormals (also known as "denormal number"), have a 0 exponent
  * and a 0 most significant mantissa bit.
  *
- * params:
+ * Params:
  *  x = a floating point number.
- * returns:
+ * Returns:
  *  $(D true) if $(D_PARAM x) is a denormal number.
  */
 bool isSubnormal(X)(X x) @trusted pure nothrow @nogc
@@ -6096,9 +6145,9 @@ bool isSubnormal(X)(X x) @trusted pure nothrow @nogc
 
 /*********************************
  * Determines if $(D_PARAM x) is $(PLUSMN)$(INFIN).
- * params:
+ * Params:
  *  x = a floating point number.
- * returns:
+ * Returns:
  *  $(D true) if $(D_PARAM x) is $(PLUSMN)$(INFIN).
  */
 bool isInfinity(X)(X x) @nogc @trusted pure nothrow
@@ -6454,7 +6503,7 @@ real NaN(ulong payload) @trusted pure nothrow @nogc
     }
 }
 
-pure nothrow @nogc unittest
+@system pure nothrow @nogc unittest // not @safe because taking address of local.
 {
     static if (floatTraits!(real).realFormat == RealFormat.ieeeDouble)
     {
@@ -6938,7 +6987,7 @@ if (isFloatingPoint!(F) && isIntegral!(G))
         default:
         }
 
-        m = -n;
+        m = cast(typeof(m))(0 - n);
         v = p / x;
     }
     else
@@ -8126,6 +8175,12 @@ bool approxEqual(T, U)(T lhs, U rhs)
 
     real r = tan(-2.0L);
     assert(fabs(r - 2.18504f) < .00001);
+
+    // Verify correct behavior for large inputs
+    assert(!isNaN(tan(0x1p63)));
+    assert(!isNaN(tan(0x1p300L)));
+    assert(!isNaN(tan(-0x1p63)));
+    assert(!isNaN(tan(-0x1p300L)));
 }
 
 @safe pure nothrow unittest
@@ -8240,7 +8295,7 @@ if (isFloatingPoint!T)
             if (var.bytes[F.SIGNPOS_BYTE] & 0x80)
             {
                 var.bits.bulk = ~var.bits.bulk;
-                var.bits.rem = ~var.bits.rem;
+                var.bits.rem = cast(typeof(var.bits.rem))(-1 - var.bits.rem); // ~var.bits.rem
             }
             else
             {
@@ -8391,7 +8446,7 @@ private T powIntegralImpl(PowType type, T)(T val)
     else
     {
         static if (isSigned!T)
-            return cast(Unqual!T) (val < 0 ? -(T(1) << bsr(-val) + type) : T(1) << bsr(val) + type);
+            return cast(Unqual!T) (val < 0 ? -(T(1) << bsr(0 - val) + type) : T(1) << bsr(val) + type);
         else
             return cast(Unqual!T) (T(1) << bsr(val) + type);
     }

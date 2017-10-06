@@ -22,10 +22,11 @@ $(LI The current implementation is optimized for little endian architectures.
   less uniform distribution.)
 )
 
-This module conforms to the APIs defined in $(D std.digest.digest).
+This module conforms to the APIs defined in $(MREF std, digest).
 
-This module publicly imports $(D std.digest.digest) and can be used as a stand-alone module.
+This module publicly imports $(MREF std, digest) and can be used as a stand-alone module.
 
+Source: $(PHOBOSSRC std/digest/_murmurhash.d)
 License: $(HTTP www.boost.org/LICENSE_1_0.txt, Boost License 1.0).
 Authors: Guillaume Chatelet
 References: $(LINK2 https://github.com/aappleby/smhasher, Reference implementation)
@@ -44,10 +45,11 @@ else version(X86_64) version = haveUnalignedLoads;
 @safe unittest
 {
     // MurmurHash3!32, MurmurHash3!(128, 32) and MurmurHash3!(128, 64) implement
-    // the std.digest.digest Template API.
+    // the std.digest Template API.
     static assert(isDigest!(MurmurHash3!32));
     // The convenient digest template allows for quick hashing of any data.
     ubyte[4] hashed = digest!(MurmurHash3!32)([1, 2, 3, 4]);
+    assert(hashed == [0, 173, 69, 68]);
 }
 
 ///
@@ -65,6 +67,7 @@ else version(X86_64) version = haveUnalignedLoads;
     // - the remaining bits are processed
     // - the hash gets finalized
     auto hashed = hasher.finish();
+    assert(hashed == [181, 151, 88, 252]);
 }
 
 ///
@@ -89,9 +92,10 @@ else version(X86_64) version = haveUnalignedLoads;
     hasher.finalize();
     // Finally get the hashed value.
     auto hashed = hasher.getBytes();
+    assert(hashed == [188, 165, 108, 2]);
 }
 
-public import std.digest.digest;
+public import std.digest;
 
 @safe:
 
