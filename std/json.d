@@ -1776,8 +1776,6 @@ pure nothrow @safe unittest // issue 15884
     Test!dchar();
 }
 
-version(LDC) version(CRuntime_Microsoft) version = LDC_MSVCRT;
-
 @safe unittest // issue 15885
 {
     enum bool realInDoublePrecision = real.mant_dig == double.mant_dig;

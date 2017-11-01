@@ -663,7 +663,7 @@ string asmMulAdd_innerloop(string OP, string M_ADDRESS) pure {
         // The first member of 'dest' which will be modified is [EDI+4*EBX].
         // EAX must already contain the first member of 'src', [ESI+4*EBX].
 
-    version(D_PIC) { bool using_PIC = true; } else version(LDC) { bool using_PIC = true; } else { bool using_PIC=false; }
+    version(D_PIC) { bool using_PIC = true; } else version(LDC) { bool using_PIC = true; } else { bool using_PIC = false; }
     return "
         // Entry point for even length
         add EBX, 1;

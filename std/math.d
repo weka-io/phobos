@@ -156,7 +156,6 @@ version(LDC)
 version(DigitalMars)
 {
     version = INLINE_YL2X;        // x87 has opcodes for these
-    version = INLINE_POLY;
 }
 
 version (X86)    version = X86_Any;
@@ -1618,7 +1617,6 @@ float atanh(float x) @safe pure nothrow @nogc { return atanh(cast(real) x); }
  * indeterminate.
  */
 long rndtol(real x) @nogc @safe pure nothrow { pragma(inline, true); return core.math.rndtol(x); }
-
 //FIXME
 ///ditto
 long rndtol(double x) @safe pure nothrow @nogc { return rndtol(cast(real) x); }
@@ -5197,11 +5195,11 @@ else version(MIPS_Any)
 {
     version = IeeeFlagsSupport;
 }
-else version (AArch64)
+else version(AArch64)
 {
     version = IeeeFlagsSupport;
 }
-else version (ARM)
+else version(ARM)
 {
     version = IeeeFlagsSupport;
 }
@@ -6918,11 +6916,7 @@ version(LDC)
     //float  fma(float  x, float  y, float  z) @safe pure nothrow @nogc { return llvm_fma(x, y, z); }
 }
 else
-{
-
 real fma(real x, real y, real z) @safe pure nothrow @nogc { return (x * y) + z; }
-
-}
 
 /*******************************************************************
  * Compute the value of x $(SUPERSCRIPT n), where n is an integer
@@ -7717,17 +7711,6 @@ body
 
 public:
 
-version (DigitalMars)
-{
-    version (Windows) version = RealPacked;
-    else version (linux) version = Real4ByteAligned;
-}
-else version (LDC)
-{
-    version (Windows) version = Real4ByteAligned;
-    else version (linux) version = Real4ByteAligned;
-}
-
 /***********************************
  * Evaluate polynomial A(x) = $(SUB a, 0) + $(SUB a, 1)x + $(SUB a, 2)$(POWER x,2)
  *                          + $(SUB a,3)$(POWER x,3); ...
@@ -7797,13 +7780,20 @@ if (isFloatingPoint!T1 && isFloatingPoint!T2)
 
 private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
 {
-    version (INLINE_POLY)
+  version (LDC)
+  {
+    pragma(inline, true);
+    return polyImplBase(x, A);
+  }
+  else
+  {
+    version (D_InlineAsm_X86)
     {
         if (__ctfe)
         {
             return polyImplBase(x, A);
         }
-        version (RealPacked)
+        version (Windows)
         {
         // BUG: This code assumes a frame pointer in EBP.
             asm pure nothrow @nogc // assembler by W. Bright
@@ -7832,7 +7822,7 @@ private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
                 ;
             }
         }
-        else version (Real4ByteAligned)
+        else version (linux)
         {
             asm pure nothrow @nogc // assembler by W. Bright
             {
@@ -7953,6 +7943,7 @@ private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
     {
         return polyImplBase(x, A);
     }
+  }
 }
 
 
