@@ -191,15 +191,7 @@ version (StaticallyHaveSSE)
 {
     private enum bool haveSSE = true;
 }
-else version (LDC) // exclude non-X86 targets
-{
-    version (X86)
-    {
-        static import core.cpuid;
-        private alias haveSSE = core.cpuid.sse;
-    }
-}
-else
+else version (X86)
 {
     static import core.cpuid;
     private alias haveSSE = core.cpuid.sse;
@@ -697,7 +689,7 @@ double cos(double x) @safe pure nothrow @nogc { return cos(cast(real) x); }
 ///ditto
 float cos(float x) @safe pure nothrow @nogc { return cos(cast(real) x); }
 
-}
+} // !LDC
 
 @safe unittest
 {
@@ -743,7 +735,7 @@ double sin(double x) @safe pure nothrow @nogc { return sin(cast(real) x); }
 ///ditto
 float sin(float x) @safe pure nothrow @nogc { return sin(cast(real) x); }
 
-}
+} // !LDC
 
 ///
 @safe unittest
@@ -832,11 +824,8 @@ real cos(ireal y) @safe pure nothrow @nogc
 
 real tan(real x) @trusted pure nothrow @nogc
 {
-    version (LDC)
-    {
-        return core.stdc.math.tanl(x);
-    }
-    else version(InlineAsm_X86_X87)
+    // LDC FIXME: inline asm leads to unittest failures (always returning 0 on x86_64?)
+    version(none) // LDC: was `InlineAsm_X86_X87`
     {
     asm pure nothrow @nogc
     {
@@ -873,7 +862,7 @@ Clear1: asm pure nothrow @nogc{
 
 Lret: {}
     }
-    else version(InlineAsm_X86_64_X87)
+    else version(none) // LDC: was `InlineAsm_X86_64_X87`
     {
         version (Win64)
         {
@@ -1729,8 +1718,8 @@ creal sqrt(creal z) @nogc @safe pure nothrow
  *    $(TR $(TD $(NAN))        $(TD $(NAN))    )
  *  )
  */
-version(none)
-{   // FIXME: Use of this LLVM intrinsic causes a unit test failure
+version(none) // LDC FIXME: Use of this LLVM intrinsic causes a unit test failure
+{
     real   exp(real   x) @safe pure nothrow @nogc { return llvm_exp(x); }
     ///ditto
     double exp(double x) @safe pure nothrow @nogc { return llvm_exp(x); }
@@ -1881,7 +1870,7 @@ double exp(double x) @safe pure nothrow @nogc  { return exp(cast(real) x); }
 /// ditto
 float exp(float x)  @safe pure nothrow @nogc   { return exp(cast(real) x); }
 
-}
+} // !none
 
 @system unittest
 {
@@ -2171,8 +2160,8 @@ L_largenegative:
  *    $(TR $(TD $(NAN))        $(TD $(NAN))    )
  *  )
  */
-version(none)
-{   // LDC FIXME: Use of this LLVM intrinsic causes a unit test failure
+version(none) // LDC FIXME: Use of this LLVM intrinsic causes a unit test failure
+{
     real   exp2(real   x) @safe pure nothrow @nogc { return llvm_exp2(x); }
     ///ditto
     double exp2(double x) @safe pure nothrow @nogc { return llvm_exp2(x); }
@@ -2469,7 +2458,7 @@ private real exp2Impl(real x) @nogc @trusted pure nothrow
     return x;
 }
 
-}
+} // !none
 
 ///
 @safe unittest
@@ -2624,21 +2613,19 @@ private real exp2Impl(real x) @nogc @trusted pure nothrow
  */
 creal expi(real y) @trusted pure nothrow @nogc
 {
-  version(LDC)
-  {
-    // LDC-specific: don't swap x87 registers for result
-    version(none) // Was InlineAsm_X86_Any_X87 but this causes assertion failures
+    version(LDC)
     {
-        return __asm!creal("fsincos", "={st},={st(1)},{st}", y);
+        // LDC-specific: don't swap x87 registers for result
+        version(none) // Was InlineAsm_X86_Any_X87 but this causes assertion failures
+        {
+            return __asm!creal("fsincos", "={st},={st(1)},{st}", y);
+        }
+        else
+        {
+            return cos(y) + sin(y)*1i;
+        }
     }
-    else
-    {
-        return cos(y) + sin(y)*1i;
-    }
-  }
-  else
-  {
-    version(InlineAsm_X86_Any_X87)
+    else version(InlineAsm_X86_Any_X87)
     {
         version (Win64)
         {
@@ -2665,7 +2652,6 @@ creal expi(real y) @trusted pure nothrow @nogc
     {
         return cos(y) + sin(y)*1i;
     }
-  }
 }
 
 ///
@@ -3517,7 +3503,7 @@ real log(real x) @safe pure nothrow @nogc
     }
 }
 
-}
+} // !LDC
 
 ///
 @safe pure nothrow @nogc unittest
@@ -3625,7 +3611,7 @@ real log10(real x) @safe pure nothrow @nogc
     }
 }
 
-}
+} // !LDC
 
 ///
 @safe pure nothrow @nogc unittest
@@ -3763,7 +3749,7 @@ real log2(real x) @safe pure nothrow @nogc
     }
 }
 
-}
+} // !LDC
 
 ///
 @system unittest
@@ -3966,7 +3952,7 @@ double fabs(double x) @safe pure nothrow @nogc { return fabs(cast(real) x); }
 ///ditto
 float fabs(float x) @safe pure nothrow @nogc { return fabs(cast(real) x); }
 
-}
+} // !LDC
 
 @safe unittest
 {
@@ -4083,17 +4069,9 @@ real hypot(real x, real y) @safe pure nothrow @nogc
  * Returns the value of x rounded upward to the next integer
  * (toward positive infinity).
  */
-version(LDC)
-{
-    real   ceil(real   x) @safe pure nothrow @nogc { return llvm_ceil(x); }
-    ///ditto
-    double ceil(double x) @safe pure nothrow @nogc { return llvm_ceil(x); }
-    ///ditto
-    float  ceil(float  x) @safe pure nothrow @nogc { return llvm_ceil(x); }
-}
+version (LDC)
+    real ceil(real x) @safe pure nothrow @nogc { return llvm_ceil(x); }
 else
-{
-
 real ceil(real x) @trusted pure nothrow @nogc
 {
     version (Win64_DMD_InlineAsm_X87)
@@ -4163,6 +4141,9 @@ real ceil(real x) @trusted pure nothrow @nogc
 }
 
 // ditto
+version(LDC)
+    double ceil(double x) @safe pure nothrow @nogc { return llvm_ceil(x); }
+else
 double ceil(double x) @trusted pure nothrow @nogc
 {
     // Special cases.
@@ -4191,6 +4172,9 @@ double ceil(double x) @trusted pure nothrow @nogc
 }
 
 // ditto
+version(LDC)
+    float ceil(float x) @safe pure nothrow @nogc { return llvm_ceil(x); }
+else
 float ceil(float x) @trusted pure nothrow @nogc
 {
     // Special cases.
@@ -4218,23 +4202,13 @@ float ceil(float x) @trusted pure nothrow @nogc
     assert(isNaN(ceil(float.init)));
 }
 
-}
-
 /**************************************
  * Returns the value of x rounded downward to the next integer
  * (toward negative infinity).
  */
 version(LDC)
-{
-    real   floor(real   x) @safe pure nothrow @nogc { return llvm_floor(x); }
-    ///ditto
-    double floor(double x) @safe pure nothrow @nogc { return llvm_floor(x); }
-    ///ditto
-    float  floor(float  x) @safe pure nothrow @nogc { return llvm_floor(x); }
-}
+    real floor(real x) @safe pure nothrow @nogc { return llvm_floor(x); }
 else
-{
-
 real floor(real x) @trusted pure nothrow @nogc
 {
     version (Win64_DMD_InlineAsm_X87)
@@ -4300,6 +4274,9 @@ real floor(real x) @trusted pure nothrow @nogc
 }
 
 // ditto
+version(LDC)
+    double floor(double x) @safe pure nothrow @nogc { return llvm_floor(x); }
+else
 double floor(double x) @trusted pure nothrow @nogc
 {
     // Special cases.
@@ -4324,6 +4301,9 @@ double floor(double x) @trusted pure nothrow @nogc
 }
 
 // ditto
+version(LDC)
+    float floor(float x) @safe pure nothrow @nogc { return llvm_floor(x); }
+else
 float floor(float x) @trusted pure nothrow @nogc
 {
     // Special cases.
@@ -4345,8 +4325,6 @@ float floor(float x) @trusted pure nothrow @nogc
     assert(floor(float.infinity) == float.infinity);
     assert(isNaN(floor(float.nan)));
     assert(isNaN(floor(float.init)));
-}
-
 }
 
 /**
@@ -4466,7 +4444,7 @@ real nearbyint(real x) @trusted nothrow @nogc
         return core.stdc.math.nearbyintl(x);
 }
 
-}
+} // !LDC
 
 /**********************************
  * Rounds x to the nearest integer value, using the current rounding
@@ -4495,7 +4473,7 @@ double rint(double x) @safe pure nothrow @nogc { return rint(cast(real) x); }
 ///ditto
 float rint(float x) @safe pure nothrow @nogc { return rint(cast(real) x); }
 
-}
+} // !LDC
 
 @safe unittest
 {
@@ -4739,7 +4717,7 @@ real round(real x) @trusted nothrow @nogc
         return core.stdc.math.roundl(x);
 }
 
-}
+} // !LDC
 
 /**********************************************
  * Return the value of x rounded to the nearest integer.
@@ -4824,7 +4802,7 @@ real trunc(real x) @trusted nothrow @nogc
         return core.stdc.math.truncl(x);
 }
 
-}
+} // !LDC
 
 /****************************************************
  * Calculate the remainder x REM y, following IEC 60559.
@@ -4919,22 +4897,28 @@ private:
     {
         version(InlineAsm_X86_Any)
         {
-            version (LDC) {
-                const sw = __asm!ushort("fstsw %ax", "={ax}");
-            } else {
-                ushort sw;
-                asm pure nothrow @nogc { fstsw sw; }
-            }
+          version (LDC)
+          {
+            const sw = __asm!ushort("fstsw %ax", "={ax}");
+          }
+          else
+          {
+            ushort sw;
+            asm pure nothrow @nogc { fstsw sw; }
+          }
 
             // OR the result with the SSE2 status register (MXCSR).
             if (haveSSE)
             {
                 uint mxcsr;
-                version (LDC) {
-                    __asm("stmxcsr $0", "=*m", &mxcsr);
-                } else {
-                    asm pure nothrow @nogc { stmxcsr mxcsr; }
-                }
+              version (LDC)
+              {
+                __asm("stmxcsr $0", "=*m", &mxcsr);
+              }
+              else
+              {
+                asm pure nothrow @nogc { stmxcsr mxcsr; }
+              }
                 return (sw | mxcsr) & EXCEPTIONS_MASK;
             }
             else return sw & EXCEPTIONS_MASK;
@@ -4987,28 +4971,34 @@ private:
     {
         version(InlineAsm_X86_Any)
         {
-            version (LDC) {
-                __asm("fnclex", "~{fpsw}");
-            } else {
-                asm pure nothrow @nogc
-                {
-                    fnclex;
-                }
+          version (LDC)
+          {
+            __asm("fnclex", "~{fpsw}");
+          }
+          else
+          {
+            asm pure nothrow @nogc
+            {
+                fnclex;
             }
+          }
 
             // Also clear exception flags in MXCSR, SSE's control register.
             if (haveSSE)
             {
                 uint mxcsr;
-                version (LDC) {
-                    __asm("stmxcsr $0", "=*m", &mxcsr);
-                    mxcsr &= ~EXCEPTIONS_MASK;
-                    __asm("ldmxcsr $0", "*m,~{flags}", &mxcsr);
-                } else {
-                    asm nothrow @nogc { stmxcsr mxcsr; }
-                    mxcsr &= ~EXCEPTIONS_MASK;
-                    asm nothrow @nogc { ldmxcsr mxcsr; }
-                }
+              version (LDC)
+              {
+                __asm("stmxcsr $0", "=*m", &mxcsr);
+                mxcsr &= ~EXCEPTIONS_MASK;
+                __asm("ldmxcsr $0", "*m,~{flags}", &mxcsr);
+              }
+              else
+              {
+                asm nothrow @nogc { stmxcsr mxcsr; }
+                mxcsr &= ~EXCEPTIONS_MASK;
+                asm nothrow @nogc { ldmxcsr mxcsr; }
+              }
             }
         }
         else version (LDC)
@@ -5110,6 +5100,7 @@ version (LDC)
 }
 else
 {
+
 @system unittest
 {
     static void func() {
@@ -5181,6 +5172,7 @@ else
         }
     }
 }
+
 } // !LDC
 
 version(X86_Any)
@@ -5418,7 +5410,6 @@ struct FloatingPointControl
             overflowException     = 0x0200,
             underflowException    = 0x0100,
             invalidException      = 0x0080,
-            /// Severe = The overflow, division by zero, and invalid exceptions.
             severeExceptions   = overflowException | divByZeroException
                                  | invalidException,
             allExceptions      = severeExceptions | underflowException
@@ -5628,7 +5619,9 @@ private:
                 assert(0, "Not yet supported");
         }
         else
-        resetIeeeFlags();
+        {
+            resetIeeeFlags();
+        }
     }
 
     // Read from the control register
@@ -5704,26 +5697,32 @@ private:
     {
         version (InlineAsm_X86_Any)
         {
-            version (LDC) {
-                __asm("fclex\n" ~
-                      "fldcw $0", "*m,~{fpsw}", &newState);
-            } else {
-                asm nothrow @nogc
-                {
-                    fclex;
-                    fldcw newState;
-                }
+          version (LDC)
+          {
+            __asm("fclex\n" ~
+                  "fldcw $0", "*m,~{fpsw}", &newState);
+          }
+          else
+          {
+            asm nothrow @nogc
+            {
+                fclex;
+                fldcw newState;
             }
+          }
 
             // Also update MXCSR, SSE's control register.
             if (haveSSE)
             {
                 uint mxcsr;
-                version (LDC) {
-                    __asm("stmxcsr $0", "=*m", &mxcsr);
-                } else {
-                    asm nothrow @nogc { stmxcsr mxcsr; }
-                }
+              version (LDC)
+              {
+                __asm("stmxcsr $0", "=*m", &mxcsr);
+              }
+              else
+              {
+                asm nothrow @nogc { stmxcsr mxcsr; }
+              }
 
                 /* In the FPU control register, rounding mode is in bits 10 and
                 11. In MXCSR it's in bits 13 and 14. */
@@ -5739,11 +5738,14 @@ private:
                 mxcsr &= ~EXCEPTION_MASK_SSE; // delete old masks
                 mxcsr |= newExceptionMasks; // write new exception masks
 
-                version (LDC) {
-                    __asm("ldmxcsr $0", "*m,~{flags}", &mxcsr);
-                } else {
-                    asm nothrow @nogc { ldmxcsr mxcsr; }
-                }
+              version (LDC)
+              {
+                __asm("ldmxcsr $0", "*m,~{flags}", &mxcsr);
+              }
+              else
+              {
+                asm nothrow @nogc { ldmxcsr mxcsr; }
+              }
             }
         }
         else version (LDC)
@@ -5817,7 +5819,7 @@ private:
     ensureDefaults();
 }
 
-version (LDC)
+version(LDC)
 {
     // TODO: most likely issue #888 again, verify
     // Linux x86_64: debug works, release fails
@@ -6299,20 +6301,15 @@ int signbit(X)(X x) @nogc @trusted pure nothrow
 /*********************************
  * Return a value composed of to with from's sign bit.
  */
-version(LDC)
-{
-    R copysign(R, X)(R to, X from) @safe pure nothrow @nogc
-        if (isFloatingPoint!(R) && isFloatingPoint!(X))
-    {
-        return llvm_copysign(to, cast(R) from);
-    }
-}
-else
-{
-
 R copysign(R, X)(R to, X from) @trusted pure nothrow @nogc
 if (isFloatingPoint!(R) && isFloatingPoint!(X))
 {
+  version(LDC)
+  {
+    return llvm_copysign(to, cast(R) from);
+  }
+  else
+  {
     ubyte* pto   = cast(ubyte *)&to;
     const ubyte* pfrom = cast(ubyte *)&from;
 
@@ -6321,8 +6318,7 @@ if (isFloatingPoint!(R) && isFloatingPoint!(X))
     pto[T.SIGNPOS_BYTE] &= 0x7F;
     pto[T.SIGNPOS_BYTE] |= pfrom[F.SIGNPOS_BYTE] & 0x80;
     return to;
-}
-
+  }
 }
 
 // ditto
@@ -6926,7 +6922,7 @@ if (isFloatingPoint!(F) && isIntegral!(G))
 {
   version(none)
   {
-    // Leads to linking error on MSVC x64 as the intrinsic maps to
+    // LDC: Leads to linking error on MSVC x64 as the intrinsic maps to
     // MSVC++ function `pow(double/float, int)` (a C++ template for
     // Visual Studio 2015).
     // Most likely not worth the effort anyway (and hindering CTFE).
@@ -6977,7 +6973,7 @@ if (isFloatingPoint!(F) && isIntegral!(G))
         v *= v;
     }
     return p;
-  }
+  } // !none
 }
 
 @safe pure nothrow @nogc unittest
@@ -7010,13 +7006,13 @@ if (isFloatingPoint!(F) && isIntegral!(G))
     {
         pragma(msg, "test disabled on x86_64, see bug 5628");
     }
-    else version(LDC)
-    {
-        pragma(msg, "test disabled on LDC, see bug 5628");
-    }
     else version(ARM)
     {
         pragma(msg, "test disabled on ARM, see bug 5628");
+    }
+    else version(LDC)
+    {
+        pragma(msg, "test disabled on LDC, see bug 5628");
     }
     else
     {
@@ -7144,23 +7140,17 @@ if (isIntegral!I && isFloatingPoint!F)
  *      $(TD no)        $(TD no) )
  * )
  */
-version(none)
-{   // FIXME: Use of this LLVM intrinsic causes a unit test failure
-    Unqual!(Largest!(F, G)) pow(F, G)(F x, G y) @safe pure nothrow @nogc
-        if (isFloatingPoint!(F) && isFloatingPoint!(G))
-    {
-        alias Float = typeof(return);
-        return llvm_pow!(Float)(x, y);
-    }
-}
-else
-{
-
 Unqual!(Largest!(F, G)) pow(F, G)(F x, G y) @nogc @trusted pure nothrow
 if (isFloatingPoint!(F) && isFloatingPoint!(G))
 {
     alias Float = typeof(return);
 
+  version(none) // LDC FIXME: Use of this LLVM intrinsic causes a unit test failure
+  {
+    return llvm_pow!(Float)(x, y);
+  }
+  else
+  {
     static real impl(real x, real y) @nogc pure nothrow
     {
         // Special cases.
@@ -7355,8 +7345,7 @@ if (isFloatingPoint!(F) && isFloatingPoint!(G))
         }
     }
     return impl(x, y);
-}
-
+  } // !none
 }
 
 @safe pure nothrow @nogc unittest
@@ -7711,6 +7700,7 @@ body
 
 public:
 
+
 /***********************************
  * Evaluate polynomial A(x) = $(SUB a, 0) + $(SUB a, 1)x + $(SUB a, 2)$(POWER x,2)
  *                          + $(SUB a,3)$(POWER x,3); ...
@@ -7780,14 +7770,12 @@ if (isFloatingPoint!T1 && isFloatingPoint!T2)
 
 private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
 {
-  version (LDC)
-  {
-    pragma(inline, true);
-    return polyImplBase(x, A);
-  }
-  else
-  {
-    version (D_InlineAsm_X86)
+    version (LDC)
+    {
+        pragma(inline, true);
+        return polyImplBase(x, A);
+    }
+    else version (D_InlineAsm_X86_X87)
     {
         if (__ctfe)
         {
@@ -7943,7 +7931,6 @@ private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
     {
         return polyImplBase(x, A);
     }
-  }
 }
 
 
@@ -8602,12 +8589,15 @@ if (isFloatingPoint!T)
     assert(truncPow2(ulong.min) == 0);
 
     assert(truncPow2(int.max) == (int.max / 2) + 1);
-    version(LDC) {} else
-    {
-        // this test relies on undefined behaviour, i.e. (1 << 63) == int.min
-        // that fails for LDC with optimizations enabled
-        assert(truncPow2(int.min) == int.min);
-    }
+  version(LDC)
+  {
+    // this test relies on undefined behaviour, i.e. (1 << 63) == int.min
+    // that fails for LDC with optimizations enabled
+  }
+  else
+  {
+    assert(truncPow2(int.min) == int.min);
+  }
     assert(truncPow2(long.max) == (long.max / 2) + 1);
     assert(truncPow2(long.min) == long.min);
 }
