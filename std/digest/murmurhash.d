@@ -38,8 +38,14 @@ $(BR) $(LINK2 https://en.wikipedia.org/wiki/MurmurHash, Wikipedia)
  */
 module std.digest.murmurhash;
 
-version(X86)         version = haveUnalignedLoads;
-else version(X86_64) version = haveUnalignedLoads;
+version (X86)
+{
+    version = haveUnalignedLoads;
+}
+else version (X86_64)
+{
+    version = haveUnalignedLoads;
+}
 
 ///
 @safe unittest
@@ -519,65 +525,60 @@ struct MurmurHash3(uint size /* 32 or 128 */ , uint opt = size_t.sizeof == 8 ? 6
             assert(bufferLeeway < Element.sizeof);
             buffer.data[bufferSize .. $] = data[0 .. bufferLeeway];
             putElement(buffer.block);
+            element_count += Element.sizeof;
             data = data[bufferLeeway .. $];
         }
 
-        size_t numChunks = 0;
-        version(haveUnalignedLoads)
+        // Do main work: process chunks of `Element.sizeof` bytes.
+        const numElements = data.length / Element.sizeof;
+        const remainderStart = numElements * Element.sizeof;
+        version (haveUnalignedLoads)
         {
-            // Do main work: process chunks of `Element.sizeof` bytes.
-            numChunks = data.length / Element.sizeof;
-            foreach (ref const Element block; cast(const(Element[]))(data[0 .. numChunks * Element.sizeof]))
+            foreach (ref const Element block; cast(const(Element[])) data[0 .. remainderStart])
             {
                 putElement(block);
             }
         }
         else
         {
-            size_t processChunks(TChunk)()
+            void processChunks(TChunk)()
             {
-                const numFullChunks = data.length / TChunk.sizeof;
-                foreach (ref const chunk; cast(const(TChunk)[]) data[0 .. numFullChunks * TChunk.sizeof])
+                foreach (ref const chunk; cast(const(TChunk[])) data[0 .. remainderStart])
                 {
-                    const block = cast(Element) chunk;
-                    putElement(block);
+                    putElement(cast(Element) chunk);
                 }
-                return numFullChunks;
             }
 
             const startAddress = cast(size_t) data.ptr;
             static if (size >= 64)
             {
                 if ((startAddress & 7) == 0)
-                    numChunks = processChunks!(ulong[size / 64])();
+                    processChunks!(ulong[size / 64])();
                 else if ((startAddress & 3) == 0)
-                    numChunks = processChunks!(uint[size / 32])();
+                    processChunks!(uint[size / 32])();
                 else if ((startAddress & 1) == 0)
-                    numChunks = processChunks!(ushort[size / 16])();
+                    processChunks!(ushort[size / 16])();
                 else
-                    numChunks = processChunks!(ubyte[size / 8])();
+                    processChunks!(ubyte[size / 8])();
             }
             else
             {
                 static assert(size == 32);
                 if ((startAddress & 3) == 0)
-                    numChunks = processChunks!(Element)();
+                    processChunks!(Element)();
                 else
                 {
-                    numChunks = data.length / Element.sizeof;
-                    foreach (ref const chunk; cast(const(ubyte[4])[]) data[0 .. numChunks * Element.sizeof])
+                    foreach (ref const chunk; cast(const(ubyte[4])[]) data[0 .. remainderStart])
                     {
-                        import core.stdc.string : memcpy;
-                        Element block;
-                        ()@trusted{memcpy(&block, &chunk, Element.sizeof);}();
-                        putElement(block);
+                        Element[1] block = void;
+                        (cast(ubyte[]) block)[] = chunk[];
+                        putElement(block[0]);
                     }
                 }
             }
         }
-
-        element_count += (numChunks + haveLeewayElement) * Element.sizeof;
-        data = data[numChunks * Element.sizeof .. $];
+        element_count += numElements * Element.sizeof;
+        data = data[remainderStart .. $];
 
         // Now add remaining data to buffer.
         assert(data.length < Element.sizeof);
@@ -800,7 +801,7 @@ version (unittest)
     {
         immutable ubyte[1028] data = 0xAC;
         immutable alignedHash = digest!H(data[0 .. 1024]);
-        foreach(i; 1 .. 5)
+        foreach (i; 1 .. 5)
         {
             immutable unalignedHash = digest!H(data[i .. 1024 + i]);
             assert(alignedHash == unalignedHash);
