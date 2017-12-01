@@ -980,9 +980,10 @@ Lret: {}
         // Compute x mod PI/4.
         real y = floor(x / PI_4);
         // Strip high bits of integer part.
-        real z = ldexp(y, -4);
-        // Compute y - 16 * (y / 16).
-        z = y - ldexp(floor(z), 4);
+        enum numHighBits = (floatTraits!real.realFormat == RealFormat.ieeeDouble ? 3 : 4);
+        real z = ldexp(y, -numHighBits);
+        // Compute y - 2^numHighBits * (y / 2^numHighBits).
+        z = y - ldexp(floor(z), numHighBits);
 
         // Integer and fraction part modulo one octant.
         int j = cast(int)(z);
@@ -997,7 +998,8 @@ Lret: {}
         z = ((x - y * P1) - y * P2) - y * P3;
         const real zz = z * z;
 
-        if (zz > 1.0e-20L)
+        enum zzThreshold = (floatTraits!real.realFormat == RealFormat.ieeeDouble ? 1.0e-14L : 1.0e-20L);
+        if (zz > zzThreshold)
             y = z + z * (zz * poly(zz, P) / poly(zz, Q));
         else
             y = z;
@@ -8123,9 +8125,12 @@ bool approxEqual(T, U)(T lhs, U rhs)
 
     // Verify correct behavior for large inputs
     assert(!isNaN(tan(0x1p63)));
-    assert(!isNaN(tan(0x1p300L)));
     assert(!isNaN(tan(-0x1p63)));
-    assert(!isNaN(tan(-0x1p300L)));
+    static if (real.mant_dig >= 64)
+    {
+        assert(!isNaN(tan(0x1p300L)));
+        assert(!isNaN(tan(-0x1p300L)));
+    }
 }
 
 @safe pure nothrow unittest
