@@ -619,7 +619,7 @@ L_end:
         static assert(isUnsigned!T);
         debug assert(y >= 0 && y <= (T.sizeof * 8));
     }
-    body
+    do
     {
         return ((x << y) | (x >> ((T.sizeof * 8) - y)));
     }
