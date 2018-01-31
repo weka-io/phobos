@@ -1409,7 +1409,7 @@ template hasLength(R)
             // Uncomment the deprecated(...) message and take the pragma(msg)
             // out once https://issues.dlang.org/show_bug.cgi?id=10181 is fixed.
             pragma(msg, __FILE__ ~ "(" ~ __LINE__.stringof ~
-                "): Note: length must have type size_t on all systems" ~
+                "): Note: length on type " ~ R.stringof ~ " must have type size_t on all systems" ~
                     ", please update your code by December 2017.");
             //deprecated("length must have type size_t on all systems")
             enum bool hasLength = true;
