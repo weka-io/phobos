@@ -12,6 +12,7 @@ import std.experimental.allocator.common;
  */
 struct Mallocator
 {
+    version(StdUnittest)
     @system unittest { testAllocator!(() => Mallocator.instance); }
 
     /**
@@ -280,7 +281,7 @@ struct AlignedMallocator
 
     /**
     Forwards to $(D alignedReallocate(b, newSize, platformAlignment)).
-    Should be used with bocks obtained with `allocate` otherwise the custom
+    Should be used with blocks obtained with `allocate` otherwise the custom
     alignment passed with `alignedAllocate` can be lost.
     */
     @system @nogc nothrow
@@ -353,7 +354,7 @@ struct AlignedMallocator
     //...
 }
 
-version(unittest) version(CRuntime_DigitalMars)
+version(StdUnittest) version(CRuntime_DigitalMars)
 @nogc nothrow
 size_t addr(ref void* ptr) { return cast(size_t) ptr; }
 
@@ -377,6 +378,9 @@ version(Posix)
     AlignedMallocator.instance.alignedReallocate(c, 32, 32);
     assert(c.ptr);
 
+    version (DragonFlyBSD) {} else    /* FIXME: Malloc on DragonFly does not return NULL when allocating more than UINTPTR_MAX
+                                       * $(LINK: https://bugs.dragonflybsd.org/issues/3114, dragonfly bug report)
+                                       * $(LINK: https://github.com/dlang/druntime/pull/1999#discussion_r157536030, PR Discussion) */
     assert(!AlignedMallocator.instance.alignedReallocate(c, size_t.max, 4096));
     AlignedMallocator.instance.deallocate(c);
 }

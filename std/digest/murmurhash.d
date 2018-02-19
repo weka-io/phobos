@@ -39,9 +39,9 @@ $(BR) $(LINK2 https://en.wikipedia.org/wiki/MurmurHash, Wikipedia)
 module std.digest.murmurhash;
 
 version (X86)
-    version = haveUnalignedLoads;
+    version = HaveUnalignedLoads;
 else version (X86_64)
-    version = haveUnalignedLoads;
+    version = HaveUnalignedLoads;
 
 ///
 @safe unittest
@@ -505,7 +505,7 @@ struct MurmurHash3(uint size /* 32 or 128 */ , uint opt = size_t.sizeof == 8 ? 6
         // Buffer should never be full while entering this function.
         assert(bufferSize < Element.sizeof);
 
-        // Check if we don't even fill up a single block buffer.
+        // Check if the incoming data doesn't fill up a whole block buffer.
         if (bufferSize + data.length < Element.sizeof)
         {
             buffer.data[bufferSize .. bufferSize + data.length] = data[];
@@ -513,12 +513,11 @@ struct MurmurHash3(uint size /* 32 or 128 */ , uint opt = size_t.sizeof == 8 ? 6
             return;
         }
 
-        // Check if we have some leftover data in the buffer. Then fill the first block buffer.
-        const bool haveLeewayElement = (bufferSize != 0);
-        if (haveLeewayElement)
+        // Check if there's some leftover data in the first block buffer, and
+        // fill the remaining space first.
+        if (bufferSize != 0)
         {
             const bufferLeeway = Element.sizeof - bufferSize;
-            assert(bufferLeeway < Element.sizeof);
             buffer.data[bufferSize .. $] = data[0 .. bufferLeeway];
             putElement(buffer.block);
             element_count += Element.sizeof;
@@ -528,7 +527,7 @@ struct MurmurHash3(uint size /* 32 or 128 */ , uint opt = size_t.sizeof == 8 ? 6
         // Do main work: process chunks of `Element.sizeof` bytes.
         const numElements = data.length / Element.sizeof;
         const remainderStart = numElements * Element.sizeof;
-        version (haveUnalignedLoads)
+        version (HaveUnalignedLoads)
         {
             foreach (ref const Element block; cast(const(Element[])) data[0 .. remainderStart])
             {
@@ -667,7 +666,7 @@ L_end:
     }
 }
 
-version (unittest)
+version(StdUnittest)
 {
     import std.string : representation;
 
