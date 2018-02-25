@@ -666,7 +666,7 @@ L_end:
     }
 }
 
-version(StdUnittest)
+version(unittest)
 {
     import std.string : representation;
 
