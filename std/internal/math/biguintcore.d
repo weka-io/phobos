@@ -693,7 +693,7 @@ public:
         {   // perform a subtraction
             if (x.data.length > 2)
             {
-                r.data = subInt(x.data, y);
+                r.data = cast(immutable) subInt(x.data, y);
             }
             else
             {   // could change sign!
@@ -728,7 +728,7 @@ public:
         }
         else
         {
-            r.data = addInt(x.data, y);
+            r.data = cast(immutable) addInt(x.data, y);
         }
         return r;
     }
@@ -742,7 +742,7 @@ public:
         if (wantSub)
         {   // perform a subtraction
             bool negative;
-            r.data = sub(x.data, y.data, &negative);
+            r.data = cast(immutable) sub(x.data, y.data, &negative);
             *sign ^= negative;
             if (r.isZero())
             {
@@ -751,7 +751,7 @@ public:
         }
         else
         {
-            r.data = add(x.data, y.data);
+            r.data = cast(immutable) add(x.data, y.data);
         }
         return r;
     }
@@ -1402,6 +1402,8 @@ int slowHighestPowerBelowUintMax(uint x) pure nothrow @safe
 
 /*  General unsigned subtraction routine for bigints.
  *  Sets result = x - y. If the result is negative, negative will be true.
+ * Returns:
+ *    unique memory
  */
 BigDigit [] sub(const BigDigit [] x, const BigDigit [] y, bool *negative)
 pure nothrow
@@ -1458,7 +1460,11 @@ pure nothrow
 }
 
 
-// return a + b
+/*
+ * return a + b
+ * Returns:
+ *    unique memory
+ */
 BigDigit [] add(const BigDigit [] a, const BigDigit [] b) pure nothrow
 {
     const(BigDigit) [] x, y;

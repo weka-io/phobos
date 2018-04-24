@@ -42,7 +42,7 @@ $(TR $(TD Flags) $(TD
     rather than the deprecated ones from std.datetime.package.
 
     License:   $(HTTP www.boost.org/LICENSE_1_0.txt, Boost License 1.0).
-    Authors:   Jonathan M Davis and Kato Shoichi
+    Authors:   $(HTTP jmdavisprog.com, Jonathan M Davis) and Kato Shoichi
     Source:    $(PHOBOSSRC std/datetime/_stopwatch.d)
 +/
 module std.datetime.stopwatch;
@@ -55,10 +55,10 @@ version(LDC) import ldc.attributes;
     Used by StopWatch to indicate whether it should start immediately upon
     construction.
 
-    If set to $(D AutoStart.no), then the StopWatch is not started when it is
+    If set to `AutoStart.no`, then the StopWatch is not started when it is
     constructed.
 
-    Otherwise, if set to $(D AutoStart.yes), then the StopWatch is started when
+    Otherwise, if set to `AutoStart.yes`, then the StopWatch is started when
     it is constructed.
   +/
 alias AutoStart = Flag!"autoStart";
@@ -87,7 +87,7 @@ public:
         Constructs a StopWatch. Whether it starts immediately depends on the
         $(LREF AutoStart) argument.
 
-        If $(D StopWatch.init) is used, then the constructed StopWatch isn't
+        If `StopWatch.init` is used, then the constructed StopWatch isn't
         running (and can't be, since no constructor ran).
       +/
     this(AutoStart autostart) @safe nothrow @nogc
@@ -240,7 +240,7 @@ public:
        does include $(I all) of the time that it was running and not just the
        time since it was started last.
 
-       Calling $(LREF reset) will reset this to $(D Duration.zero).
+       Calling $(LREF reset) will reset this to `Duration.zero`.
       +/
     Duration peek() @safe const nothrow @nogc
     {
@@ -405,9 +405,9 @@ private:
 
     Returns:
         The amount of time (as a $(REF Duration,core,time)) that it took to call
-        each function $(D n) times. The first value is the length of time that
-        it took to call $(D fun[0]) $(D n) times. The second value is the length
-        of time it took to call $(D fun[1]) $(D n) times. Etc.
+        each function `n` times. The first value is the length of time that
+        it took to call `fun[0]` `n` times. The second value is the length
+        of time it took to call `fun[1]` `n` times. Etc.
   +/
 Duration[fun.length] benchmark(fun...)(uint n)
 {
@@ -447,9 +447,16 @@ Duration[fun.length] benchmark(fun...)(uint n)
     int a;
     @optStrategy("none") // LDC
     void f0() nothrow {}
-    void f1() nothrow { auto b = to!string(a); }
+    void f1() nothrow @trusted {
+        // do not allow any optimizer to optimize this function away
+        import core.thread : getpid;
+        import core.stdc.stdio : printf;
+        auto b = getpid.to!string;
+        if (getpid == 1) // never happens, but prevents optimization
+            printf("%p", &b);
+    }
     auto r = benchmark!(f0, f1)(1000);
-    assert(r[0] > Duration.zero);
+    assert(r[0] >= Duration.zero);
     assert(r[1] > Duration.zero);
     assert(r[1] > r[0]);
     assert(r[0] < seconds(1));
