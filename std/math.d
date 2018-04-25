@@ -4758,9 +4758,9 @@ if (is(typeof(rfunc(F.init)) : F) && isFloatingPoint!F)
  */
 version(LDC)
 {
-    real   nearbyint(real   x) @safe nothrow @nogc { return llvm_nearbyint(x); }
-    //double nearbyint(double x) @safe nothrow @nogc { return llvm_nearbyint(x); }
-    //float  nearbyint(float  x) @safe nothrow @nogc { return llvm_nearbyint(x); }
+    real   nearbyint(real   x) @safe pure nothrow @nogc { return llvm_nearbyint(x); }
+    //double nearbyint(double x) @safe pure nothrow @nogc { return llvm_nearbyint(x); }
+    //float  nearbyint(float  x) @safe pure nothrow @nogc { return llvm_nearbyint(x); }
 }
 else
 {
@@ -5061,9 +5061,9 @@ static if (real.mant_dig >= long.sizeof * 8)
  */
 version(LDC)
 {
-    real   round(real   x) @safe nothrow @nogc { return llvm_round(x); }
-    //double round(double x) @safe nothrow @nogc { return llvm_round(x); }
-    //float  round(float  x) @safe nothrow @nogc { return llvm_round(x); }
+    real   round(real   x) @safe pure nothrow @nogc { return llvm_round(x); }
+    //double round(double x) @safe pure nothrow @nogc { return llvm_round(x); }
+    //float  round(float  x) @safe pure nothrow @nogc { return llvm_round(x); }
 }
 else
 {
