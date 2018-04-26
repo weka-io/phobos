@@ -134,6 +134,7 @@ import std.traits; // CommonType, isFloatingPoint, isIntegral, isSigned, isUnsig
 
 version(LDC)
 {
+    import ldc.attributes;
     import ldc.intrinsics;
     import ldc.llvmasm;
 
@@ -4824,6 +4825,7 @@ float rint(float x) @safe pure nothrow @nogc { return rint(cast(real) x); }
 } // !LDC
 
 ///
+@optStrategy("none") // LDC, required for the IEEE flags check
 @safe unittest
 {
     resetIeeeFlags();
@@ -5540,16 +5542,7 @@ public:
 }
 
 ///
-version (LDC)
-{
-    unittest
-    {
-        pragma(msg, "ieeeFlags test disabled, see LDC Issue #888");
-    }
-}
-else
-{
-
+@optStrategy("none") // LDC
 @safe unittest
 {
     static void func() {
@@ -5576,7 +5569,15 @@ else
     assert(ieeeFlags == f);
 }
 
-version(D_HardFloat) @safe unittest
+version (LDC)
+{
+    unittest
+    {
+        pragma(msg, "ieeeFlags test disabled, see LDC Issue #888");
+    }
+}
+else
+version(D_HardFloat) unittest
 {
     import std.meta : AliasSeq;
 
@@ -5622,8 +5623,6 @@ version(D_HardFloat) @safe unittest
     }}
 }
 
-} // !LDC
-
 version(X86_Any)
 {
     version = IeeeFlagsSupport;
@@ -5652,6 +5651,7 @@ void resetIeeeFlags() @trusted nothrow @nogc
 }
 
 ///
+@optStrategy("none") // LDC, required for the IEEE flags check
 @safe unittest
 {
     resetIeeeFlags();
@@ -5671,6 +5671,7 @@ void resetIeeeFlags() @trusted nothrow @nogc
 }
 
 ///
+@optStrategy("none") // LDC, required for the IEEE flags check
 @safe nothrow unittest
 {
     resetIeeeFlags();
@@ -6214,6 +6215,7 @@ private:
 }
 
 ///
+@optStrategy("none") // LDC
 @safe unittest
 {
     FloatingPointControl fpctrl;
