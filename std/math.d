@@ -7393,6 +7393,8 @@ real fdim(real x, real y) @safe pure nothrow @nogc { return (x > y) ? x - y : +0
 
 /**
  * Returns the larger of x and y.
+ *
+ * If one of the arguments is a NaN, the other is returned.
  */
 version(LDC)
 {
@@ -7401,7 +7403,7 @@ version(LDC)
     //float  fmax(float  x, float  y) @safe pure nothrow @nogc { return llvm_maxnum(x, y); }
 }
 else
-real fmax(real x, real y) @safe pure nothrow @nogc { return x > y ? x : y; }
+real fmax(real x, real y) @safe pure nothrow @nogc { return core.stdc.math.fmaxl(x, y); }
 
 ///
 @safe pure nothrow @nogc unittest
@@ -7410,11 +7412,13 @@ real fmax(real x, real y) @safe pure nothrow @nogc { return x > y ? x : y; }
     assert(fmax(-2.0, 0.0) == 0.0);
     assert(fmax(real.infinity, 2.0) == real.infinity);
     assert(fmax(real.nan, 2.0) == 2.0);
-    assert(fmax(2.0, real.nan) is real.nan);
+    assert(fmax(2.0, real.nan) == 2.0);
 }
 
 /**
  * Returns the smaller of x and y.
+ *
+ * If one of the arguments is a NaN, the other is returned.
  */
 version(LDC)
 {
@@ -7423,7 +7427,7 @@ version(LDC)
     //float  fmin(float  x, float  y) @safe pure nothrow @nogc { return llvm_minnum(x, y); }
 }
 else
-real fmin(real x, real y) @safe pure nothrow @nogc { return x < y ? x : y; }
+real fmin(real x, real y) @safe pure nothrow @nogc { return core.stdc.math.fminl(x, y); }
 
 ///
 @safe pure nothrow @nogc unittest
@@ -7432,7 +7436,7 @@ real fmin(real x, real y) @safe pure nothrow @nogc { return x < y ? x : y; }
     assert(fmin(-2.0, 0.0) == -2.0);
     assert(fmin(real.infinity, 2.0) == 2.0);
     assert(fmin(real.nan, 2.0) == 2.0);
-    assert(fmin(2.0, real.nan) is real.nan);
+    assert(fmin(2.0, real.nan) == 2.0);
 }
 
 /**************************************
