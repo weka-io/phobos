@@ -7934,7 +7934,15 @@ if (isFloatingPoint!(F) && isFloatingPoint!(G))
     assert(pow(-real.infinity, 2.0) == real.infinity);
     assert(pow(-real.infinity, -1.0) == -0.0);
     assert(pow(-real.infinity, -2.0) == 0.0);
-    assert(pow(1.0, real.infinity) is -real.nan);
+    version (LDC)
+    {
+        // ignore sign for enabled optimizations
+        assert(isNaN(pow(1.0, real.infinity)));
+    }
+    else
+    {
+        assert(pow(1.0, real.infinity) is -real.nan);
+    }
     assert(pow(0.0, -1.0) == real.infinity);
     assert(pow(real.nan, 0.0) == 1.0);
 }
