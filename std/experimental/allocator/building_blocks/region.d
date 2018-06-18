@@ -1,6 +1,6 @@
 // Written in the D programming language.
 /**
-Source: $(PHOBOSSRC std/experimental/allocator/building_blocks/_region.d)
+Source: $(PHOBOSSRC std/experimental/allocator/building_blocks/region.d)
 */
 module std.experimental.allocator.building_blocks.region;
 
@@ -90,9 +90,17 @@ struct Region(ParentAllocator = NullAllocator,
     }
 
     /// Ditto
-    static if (!is(ParentAllocator == NullAllocator))
+    static if (!is(ParentAllocator == NullAllocator) && !stateSize!ParentAllocator)
     this(size_t n)
     {
+        this(cast(ubyte[]) (parent.allocate(n.roundUpToAlignment(alignment))));
+    }
+
+    /// Ditto
+    static if (!is(ParentAllocator == NullAllocator) && stateSize!ParentAllocator)
+    this(ParentAllocator parent, size_t n)
+    {
+        this.parent = parent;
         this(cast(ubyte[]) (parent.allocate(n.roundUpToAlignment(alignment))));
     }
 
@@ -290,7 +298,7 @@ struct Region(ParentAllocator = NullAllocator,
     Deallocates all memory allocated by this region, which can be subsequently
     reused for new allocations.
     */
-    bool deallocateAll() @safe pure nothrow @nogc
+    bool deallocateAll() pure nothrow @nogc
     {
         static if (growDownwards)
         {
@@ -961,7 +969,6 @@ shared struct SharedRegion(ParentAllocator = NullAllocator,
     uint minAlign = platformAlignment,
     Flag!"growDownwards" growDownwards = No.growDownwards)
 {
-nothrow @nogc:
     static assert(minAlign.isGoodStaticAlignment);
     static assert(ParentAllocator.alignment >= minAlign);
 
@@ -1121,6 +1128,24 @@ nothrow @nogc:
     }
 
     /**
+    Deallocates all memory allocated by this region, which can be subsequently
+    reused for new allocations.
+    */
+    bool deallocateAll() pure nothrow @nogc
+    {
+        import core.atomic : atomicStore;
+        static if (growDownwards)
+        {
+            atomicStore(_current, cast(shared(void*)) roundedEnd());
+        }
+        else
+        {
+            atomicStore(_current, cast(shared(void*)) roundedBegin());
+        }
+        return true;
+    }
+
+    /**
     Allocates `n` bytes of memory aligned at alignment `a`.
     Params:
         n = number of bytes to allocate
@@ -1263,6 +1288,11 @@ nothrow @nogc:
             else
                 assert(a.deallocate(buf[i]));
         }
+
+        assert(a.deallocateAll());
+        void[] b = a.allocate(63);
+        assert(b.length == 63);
+        assert(a.deallocate(b));
     }
 
     auto a1 = SharedRegion!(Mallocator, Mallocator.alignment,
@@ -1324,6 +1354,11 @@ nothrow @nogc:
         }
 
         assert(!a.deallocate(buf[1]));
+        assert(a.deallocateAll());
+
+        void[] b = a.allocate(13);
+        assert(b.length == 13);
+        assert(a.deallocate(b));
     }
 
     auto a1 = SharedRegion!(Mallocator, Mallocator.alignment,
