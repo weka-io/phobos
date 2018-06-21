@@ -4062,7 +4062,7 @@ real logb(real x) @trusted nothrow @nogc
             ret                         ;
         }
     }
-    else version (CRuntime_Microsoft)
+    else version (none) // LDC: was `CRuntime_Microsoft`
     {
         asm pure nothrow @nogc
         {
