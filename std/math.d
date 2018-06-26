@@ -806,6 +806,7 @@ deprecated
 
 version(LDC)
 {
+    pragma(inline, true):
     real   cos(real   x) @safe pure nothrow @nogc { return llvm_cos(x); }
     ///ditto
     double cos(double x) @safe pure nothrow @nogc { return llvm_cos(x); }
@@ -860,6 +861,7 @@ float cos(float x) @safe pure nothrow @nogc { return cos(cast(real) x); }
  */
 version(LDC)
 {
+    pragma(inline, true):
     real   sin(real   x) @safe pure nothrow @nogc { return llvm_sin(x); }
     ///ditto
     double sin(double x) @safe pure nothrow @nogc { return llvm_sin(x); }
@@ -1978,6 +1980,7 @@ auto sqrt(creal z) @nogc @safe pure nothrow
  */
 version(none) // LDC FIXME: Use of this LLVM intrinsic causes a unit test failure
 {
+    pragma(inline, true):
     real   exp(real   x) @safe pure nothrow @nogc { return llvm_exp(x); }
     ///ditto
     double exp(double x) @safe pure nothrow @nogc { return llvm_exp(x); }
@@ -2416,6 +2419,7 @@ L_largenegative:
  */
 version(none) // LDC FIXME: Use of this LLVM intrinsic causes a unit test failure
 {
+    pragma(inline, true):
     real   exp2(real   x) @safe pure nothrow @nogc { return llvm_exp2(x); }
     ///ditto
     double exp2(double x) @safe pure nothrow @nogc { return llvm_exp2(x); }
@@ -3676,6 +3680,7 @@ private
  */
 version(LDC)
 {
+    pragma(inline, true):
     real   log(real   x) @safe pure nothrow @nogc { return llvm_log(x); }
     //double log(double x) @safe pure nothrow @nogc { return llvm_log(x); }
     //float  log(float  x) @safe pure nothrow @nogc { return llvm_log(x); }
@@ -3780,6 +3785,7 @@ real log(real x) @safe pure nothrow @nogc
  */
 version(LDC)
 {
+    pragma(inline, true):
     real   log10(real   x) @safe pure nothrow @nogc { return llvm_log10(x); }
     //double log10(double x) @safe pure nothrow @nogc { return llvm_log10(x); }
     //float  log10(float  x) @safe pure nothrow @nogc { return llvm_log10(x); }
@@ -3940,6 +3946,7 @@ real log1p(real x) @safe pure nothrow @nogc
  */
 version(LDC)
 {
+    pragma(inline, true):
     real   log2(real   x) @safe pure nothrow @nogc { return llvm_log2(x); }
     //double log2(double x) @safe pure nothrow @nogc { return llvm_log2(x); }
     //float  log2(float  x) @safe pure nothrow @nogc { return llvm_log2(x); }
@@ -4242,6 +4249,7 @@ real cbrt(real x) @trusted nothrow @nogc
  */
 version(LDC)
 {
+    pragma(inline, true):
     real   fabs(real   x) @safe pure nothrow @nogc { return llvm_fabs(x); }
     ///ditto
     double fabs(double x) @safe pure nothrow @nogc { return llvm_fabs(x); }
@@ -4393,11 +4401,15 @@ real hypot(real x, real y) @safe pure nothrow @nogc
  * Returns the value of x rounded upward to the next integer
  * (toward positive infinity).
  */
-version (LDC)
-    real ceil(real x) @safe pure nothrow @nogc { return llvm_ceil(x); }
-else
 real ceil(real x) @trusted pure nothrow @nogc
 {
+  version (LDC)
+  {
+    pragma(inline, true);
+    return llvm_ceil(x);
+  }
+  else
+  {
     version (Win64_DMD_InlineAsm_X87)
     {
         asm pure nothrow @nogc
@@ -4447,6 +4459,7 @@ real ceil(real x) @trusted pure nothrow @nogc
 
         return y;
     }
+  }
 }
 
 ///
@@ -4465,11 +4478,15 @@ real ceil(real x) @trusted pure nothrow @nogc
 }
 
 /// ditto
-version(LDC)
-    double ceil(double x) @safe pure nothrow @nogc { return llvm_ceil(x); }
-else
 double ceil(double x) @trusted pure nothrow @nogc
 {
+  version (LDC)
+  {
+    pragma(inline, true);
+    return llvm_ceil(x);
+  }
+  else
+  {
     // Special cases.
     if (isNaN(x) || isInfinity(x))
         return x;
@@ -4479,6 +4496,7 @@ double ceil(double x) @trusted pure nothrow @nogc
         y += 1.0;
 
     return y;
+  }
 }
 
 @safe pure nothrow @nogc unittest
@@ -4496,11 +4514,15 @@ double ceil(double x) @trusted pure nothrow @nogc
 }
 
 /// ditto
-version(LDC)
-    float ceil(float x) @safe pure nothrow @nogc { return llvm_ceil(x); }
-else
 float ceil(float x) @trusted pure nothrow @nogc
 {
+  version (LDC)
+  {
+    pragma(inline, true);
+    return llvm_ceil(x);
+  }
+  else
+  {
     // Special cases.
     if (isNaN(x) || isInfinity(x))
         return x;
@@ -4510,6 +4532,7 @@ float ceil(float x) @trusted pure nothrow @nogc
         y += 1.0;
 
     return y;
+  }
 }
 
 @safe pure nothrow @nogc unittest
@@ -4530,11 +4553,15 @@ float ceil(float x) @trusted pure nothrow @nogc
  * Returns the value of x rounded downward to the next integer
  * (toward negative infinity).
  */
-version(LDC)
-    real floor(real x) @safe pure nothrow @nogc { return llvm_floor(x); }
-else
 real floor(real x) @trusted pure nothrow @nogc
 {
+  version (LDC)
+  {
+    pragma(inline, true);
+    return llvm_floor(x);
+  }
+  else
+  {
     version (Win64_DMD_InlineAsm_X87)
     {
         asm pure nothrow @nogc
@@ -4580,6 +4607,7 @@ real floor(real x) @trusted pure nothrow @nogc
 
         return floorImpl(x);
     }
+  }
 }
 
 ///
@@ -4600,16 +4628,21 @@ real floor(real x) @trusted pure nothrow @nogc
 }
 
 /// ditto
-version(LDC)
-    double floor(double x) @safe pure nothrow @nogc { return llvm_floor(x); }
-else
 double floor(double x) @trusted pure nothrow @nogc
 {
+  version (LDC)
+  {
+    pragma(inline, true);
+    return llvm_floor(x);
+  }
+  else
+  {
     // Special cases.
     if (isNaN(x) || isInfinity(x) || x == 0.0)
         return x;
 
     return floorImpl(x);
+  }
 }
 
 @safe pure nothrow @nogc unittest
@@ -4629,16 +4662,21 @@ double floor(double x) @trusted pure nothrow @nogc
 }
 
 /// ditto
-version(LDC)
-    float floor(float x) @safe pure nothrow @nogc { return llvm_floor(x); }
-else
 float floor(float x) @trusted pure nothrow @nogc
 {
+  version (LDC)
+  {
+    pragma(inline, true);
+    return llvm_floor(x);
+  }
+  else
+  {
     // Special cases.
     if (isNaN(x) || isInfinity(x) || x == 0.0)
         return x;
 
     return floorImpl(x);
+  }
 }
 
 @safe pure nothrow @nogc unittest
@@ -4760,6 +4798,7 @@ if (is(typeof(rfunc(F.init)) : F) && isFloatingPoint!F)
  */
 version(LDC)
 {
+    pragma(inline, true):
     real   nearbyint(real   x) @safe pure nothrow @nogc { return llvm_nearbyint(x); }
     //double nearbyint(double x) @safe pure nothrow @nogc { return llvm_nearbyint(x); }
     //float  nearbyint(float  x) @safe pure nothrow @nogc { return llvm_nearbyint(x); }
@@ -4806,6 +4845,7 @@ real nearbyint(real x) @safe pure nothrow @nogc
  */
 version(LDC)
 {
+    pragma(inline, true):
     real   rint(real   x) @safe pure nothrow @nogc { return llvm_rint(x); }
     ///ditto
     double rint(double x) @safe pure nothrow @nogc { return llvm_rint(x); }
@@ -4826,12 +4866,16 @@ float rint(float x) @safe pure nothrow @nogc { return rint(cast(real) x); }
 } // !LDC
 
 ///
-@optStrategy("none") // LDC, required for the IEEE flags check
 @safe unittest
 {
     resetIeeeFlags();
     assert(rint(0.4) == 0);
-    assert(ieeeFlags.inexact);
+    version(LDC)
+    {
+        // inexact bit not set with enabled optimizations
+    }
+    else
+        assert(ieeeFlags.inexact);
 
     assert(rint(0.5) == 0);
     assert(rint(0.6) == 1);
@@ -5064,6 +5108,7 @@ static if (real.mant_dig >= long.sizeof * 8)
  */
 version(LDC)
 {
+    pragma(inline, true):
     real   round(real   x) @safe pure nothrow @nogc { return llvm_round(x); }
     //double round(double x) @safe pure nothrow @nogc { return llvm_round(x); }
     //float  round(float  x) @safe pure nothrow @nogc { return llvm_round(x); }
@@ -5156,6 +5201,7 @@ version(StdDdoc)
 }
 else version (LDC)
 {
+    pragma(inline, true):
     real   trunc(real   x) @safe pure nothrow @nogc { return llvm_trunc(x); }
     //double trunc(double x) @safe pure nothrow @nogc { return llvm_trunc(x); }
     //float  trunc(float  x) @safe pure nothrow @nogc { return llvm_trunc(x); }
@@ -6775,6 +6821,7 @@ if (isFloatingPoint!(R) && isFloatingPoint!(X))
 {
   version(LDC)
   {
+    pragma(inline, true);
     return llvm_copysign(to, cast(R) from);
   }
   else
@@ -7401,6 +7448,7 @@ real fdim(real x, real y) @safe pure nothrow @nogc { return (x > y) ? x - y : +0
  */
 version(LDC)
 {
+    pragma(inline, true):
     real   fmax(real   x, real   y) @safe pure nothrow @nogc { return llvm_maxnum(x, y); }
     //double fmax(double x, double y) @safe pure nothrow @nogc { return llvm_maxnum(x, y); }
     //float  fmax(float  x, float  y) @safe pure nothrow @nogc { return llvm_maxnum(x, y); }
@@ -7425,6 +7473,7 @@ real fmax(real x, real y) @safe pure nothrow @nogc { return core.stdc.math.fmaxl
  */
 version(LDC)
 {
+    pragma(inline, true):
     real   fmin(real   x, real   y) @safe pure nothrow @nogc { return llvm_minnum(x, y); }
     //double fmin(double x, double y) @safe pure nothrow @nogc { return llvm_minnum(x, y); }
     //float  fmin(float  x, float  y) @safe pure nothrow @nogc { return llvm_minnum(x, y); }
@@ -7450,6 +7499,7 @@ real fmin(real x, real y) @safe pure nothrow @nogc { return core.stdc.math.fminl
  */
 version(LDC)
 {
+    pragma(inline, true):
     real   fma(real   x, real   y, real   z) @safe pure nothrow @nogc { return llvm_fma(x, y, z); }
     //double fma(double x, double y, double z) @safe pure nothrow @nogc { return llvm_fma(x, y, z); }
     //float  fma(float  x, float  y, float  z) @safe pure nothrow @nogc { return llvm_fma(x, y, z); }
@@ -7479,6 +7529,7 @@ if (isFloatingPoint!(F) && isIntegral!(G))
     // MSVC++ function `pow(double/float, int)` (a C++ template for
     // Visual Studio 2015).
     // Most likely not worth the effort anyway (and hindering CTFE).
+    pragma(inline, true);
     return llvm_powi!(Unqual!F)(x, cast(int) n);
   }
   else
@@ -7718,6 +7769,7 @@ if (isFloatingPoint!(F) && isFloatingPoint!(G))
 
   version(none) // LDC FIXME: Use of this LLVM intrinsic causes a unit test failure
   {
+    pragma(inline, true);
     return llvm_pow!(Float)(x, y);
   }
   else
