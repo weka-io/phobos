@@ -105,10 +105,8 @@ enum LetterCase : bool
 /// Newline sequence for this system.
 version(Windows)
     immutable newline = "\r\n";
-else version(Posix)
-    immutable newline = "\n";
 else
-    static assert(0, "Unsupported OS");
+    immutable newline = "\n";
 
 
 /++
