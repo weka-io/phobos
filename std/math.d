@@ -968,7 +968,8 @@ deprecated
  */
 real tan(real x) @trusted pure nothrow @nogc // TODO: @safe
 {
-    version(InlineAsm_X86_Any)
+    // LDC FIXME: inline asm leads to unittest failures (always returning 0 on x86_64?)
+    version(none) // LDC: should be `InlineAsm_X86_Any_X87`
     {
         if (!__ctfe)
             return tanAsm(x);
@@ -990,11 +991,10 @@ float tan(float x) @safe pure nothrow @nogc { return __ctfe ? cast(float) tan(ca
     assert(tan(PI / 3).approxEqual(sqrt(3.0)));
 }
 
-version(InlineAsm_X86_Any)
+version(InlineAsm_X86_Any_X87)
 private real tanAsm(real x) @trusted pure nothrow @nogc
 {
-    // LDC FIXME: inline asm leads to unittest failures (always returning 0 on x86_64?)
-    version(none) // LDC: was `InlineAsm_X86_X87`
+    version(D_InlineAsm_X86)
     {
     asm pure nothrow @nogc
     {
@@ -1031,7 +1031,7 @@ Clear1: asm pure nothrow @nogc{
 
 Lret: {}
     }
-    else version(none) // LDC: was `InlineAsm_X86_64_X87`
+    else version(D_InlineAsm_X86_64)
     {
         version (Win64)
         {
@@ -1646,7 +1646,7 @@ float atan2(float y, float x) @safe pure nothrow @nogc
     assert(atan2(1.0, sqrt(3.0)).approxEqual(PI / 6));
 }
 
-version(InlineAsm_X86_Any)
+version(InlineAsm_X86_Any_X87)
 private real atan2Asm(real y, real x) @trusted pure nothrow @nogc
 {
     version (Win64)
@@ -2562,7 +2562,7 @@ private T expImpl(T)(T x) @safe pure nothrow @nogc
  */
 real expm1(real x) @trusted pure nothrow @nogc // TODO: @safe
 {
-    version(InlineAsm_X86_Any)
+    version(InlineAsm_X86_Any_X87)
     {
         if (!__ctfe)
             return expm1Asm(x);
@@ -2591,10 +2591,10 @@ float expm1(float x) @safe pure nothrow @nogc
     assert(expm1(2.0).feqrel(6.3890) > 16);
 }
 
-version(InlineAsm_X86_Any)
+version(InlineAsm_X86_Any_X87)
 private real expm1Asm(real x) @trusted pure nothrow @nogc
 {
-    version(InlineAsm_X86_X87)
+    version(D_InlineAsm_X86)
     {
         enum PARAMSIZE = (real.sizeof+3)&(0xFFFF_FFFC); // always a multiple of 4
         asm pure nothrow @nogc
@@ -2666,7 +2666,7 @@ L_largenegative:
             ret PARAMSIZE;
         }
     }
-    else version(InlineAsm_X86_64_X87)
+    else version(D_InlineAsm_X86_64)
     {
         asm pure nothrow @nogc
         {
@@ -3334,7 +3334,7 @@ creal expi(real y) @trusted pure nothrow @nogc
             return cos(y) + sin(y)*1i;
         }
     }
-    else version(InlineAsm_X86_Any_X87)
+    else version(InlineAsm_X86_Any)
     {
         version (Win64)
         {
@@ -4892,7 +4892,7 @@ real ceil(real x) @trusted pure nothrow @nogc
   }
   else
   {
-    version (Win64_DMD_InlineAsm_X87)
+    version (Win64_DMD_InlineAsm)
     {
         asm pure nothrow @nogc
         {
@@ -5044,7 +5044,7 @@ real floor(real x) @trusted pure nothrow @nogc
   }
   else
   {
-    version (Win64_DMD_InlineAsm_X87)
+    version (Win64_DMD_InlineAsm)
     {
         asm pure nothrow @nogc
         {
@@ -9115,7 +9115,7 @@ private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
         pragma(inline, true);
         return polyImplBase(x, A);
     }
-    else version (D_InlineAsm_X86_X87)
+    else version (D_InlineAsm_X86)
     {
         if (__ctfe)
         {
