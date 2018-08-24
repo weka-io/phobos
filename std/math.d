@@ -648,10 +648,8 @@ template isDeprecatedComplex(T)
  *     the return type will be the same as the input;
  */
 auto abs(Num)(Num x)
-// workaround for https://issues.dlang.org/show_bug.cgi?id=18251
-//if (!isDeprecatedComplex!Num &&
-    //(is(typeof(Num.init >= 0)) && is(typeof(-Num.init)) ||
-    //(is(Unqual!Num == short) || is(Unqual!Num == byte))))
+if ((is(Unqual!Num == short) || is(Unqual!Num == byte)) ||
+    (is(typeof(Num.init >= 0)) && is(typeof(-Num.init))))
 {
     static if (isFloatingPoint!(Num))
         return fabs(x);
@@ -674,6 +672,7 @@ auto abs(Num)(Num x)
     assert(abs(2321312L)  == 2321312L);
 }
 
+version(TestComplex)
 deprecated
 @safe pure nothrow @nogc unittest
 {
@@ -703,6 +702,7 @@ deprecated
     }}
 }
 
+version(TestComplex)
 deprecated
 @safe pure nothrow @nogc unittest
 {
@@ -731,6 +731,22 @@ static foreach (Num; AliasSeq!(cfloat, cdouble, creal, ifloat, idouble, ireal))
         else
             static assert(0, "Unsupported type: " ~ Num.stringof);
     }
+}
+
+// https://issues.dlang.org/show_bug.cgi?id=19162
+@safe unittest
+{
+    struct Vector(T, int size)
+    {
+        T x, y, z;
+    }
+
+    static auto abs(T, int size)(auto ref const Vector!(T, size) v)
+    {
+        return v;
+    }
+    Vector!(int, 3) v;
+    assert(abs(v) == v);
 }
 
 /*
