@@ -3390,7 +3390,7 @@ auto nullable(T)(T t)
 }
 
 // check that toHash on Nullable is forwarded to the contained type
-@safe unittest
+unittest // LDC: removed @safe, which requires -dip1000
 {
     struct S
     {
