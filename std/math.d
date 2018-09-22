@@ -940,10 +940,10 @@ deprecated
  *      $(TR $(TD $(PLUSMNINF))  $(TD $(NAN))       $(TD yes))
  *      )
  */
+pragma(inline, true) // LDC
 real tan(real x) @trusted pure nothrow @nogc // TODO: @safe
 {
-    // LDC FIXME: inline asm leads to unittest failures (always returning 0 on x86_64?)
-    version (none) // LDC: should be `InlineAsm_X86_Any_X87`
+    version (InlineAsm_X86_Any_X87)
     {
         if (!__ctfe)
             return tanAsm(x);
@@ -965,14 +965,16 @@ float tan(float x) @safe pure nothrow @nogc { return __ctfe ? cast(float) tan(ca
     assert(tan(PI / 3).approxEqual(sqrt(3.0)));
 }
 
+// LDC: pass `real.nan` as extra param and use extern(C++) for non-reversed params
 version (InlineAsm_X86_Any_X87)
-private real tanAsm(real x) @trusted pure nothrow @nogc
+private extern(C++) real tanAsm(real x, real nan = real.nan) @trusted pure nothrow @nogc
 {
     version (D_InlineAsm_X86)
     {
     asm pure nothrow @nogc
     {
-        fld     x[EBP]                  ; // load theta
+        naked                           ;
+        fld     real ptr [ESP+4]        ; // load theta
         fxam                            ; // test for oddball values
         fstsw   AX                      ;
         sahf                            ;
@@ -996,14 +998,13 @@ SC17:   fprem1                          ;
 trigerr:
         jnp     Lret                    ; // if theta is NAN, return theta
         fstp    ST(0)                   ; // dump theta
-    }
-    return real.nan;
+        fld     real ptr [ESP+16]       ; // load nan param
+        jmp     Lret                    ;
 
-Clear1: asm pure nothrow @nogc{
-        fstp    ST(0)                   ; // dump X, which is always 1
-    }
+Clear1: fstp    ST(0)                   ; // dump X, which is always 1
 
-Lret: {}
+Lret:   ret                             ;
+    }
     }
     else version (D_InlineAsm_X86_64)
     {
@@ -1011,6 +1012,7 @@ Lret: {}
         {
             asm pure nothrow @nogc
             {
+                naked                   ;
                 fld     real ptr [RCX]  ; // load theta
             }
         }
@@ -1018,7 +1020,8 @@ Lret: {}
         {
             asm pure nothrow @nogc
             {
-                fld     x[RBP]          ; // load theta
+                naked                   ;
+                fld     real ptr [RSP+8]; // load theta
             }
         }
     asm pure nothrow @nogc
@@ -1048,13 +1051,19 @@ trigerr:
         jz      Lret                    ; // if theta is NAN, return theta
         fstp    ST(0)                   ; // dump theta
     }
-    return real.nan;
+        // load nan param
+        version (Win64)
+            asm pure nothrow @nogc { fld real ptr [RDX]; }
+        else
+            asm pure nothrow @nogc { fld real ptr [RSP+24]; }
+    asm pure nothrow @nogc
+    {
+        jmp     Lret                    ;
 
-Clear1: asm pure nothrow @nogc{
-        fstp    ST(0)                   ; // dump X, which is always 1
+Clear1: fstp    ST(0)                   ; // dump X, which is always 1
+
+Lret:   ret                             ;
     }
-
-Lret: {}
     }
     else
         static assert(0);
