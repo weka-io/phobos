@@ -103,9 +103,11 @@ enum LetterCase : bool
 }
 
 /// Newline sequence for this system.
-version(Windows)
+version (Windows)
     immutable newline = "\r\n";
-else
+else version (Posix)
+    immutable newline = "\n";
+else version (LDC) // WebAssembly etc.
     immutable newline = "\n";
 
 

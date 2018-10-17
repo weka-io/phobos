@@ -20,8 +20,8 @@
 
 module std.internal.math.biguintarm;
 
-version(LDC):
-version(ARM):
+version (LDC):
+version (ARM):
 
 import ldc.llvmasm;
 
@@ -680,7 +680,7 @@ void multibyteSquare(BigDigit[] result, const(BigDigit) [] x) pure @nogc nothrow
     multibyteAddDiagonalSquares(result, x);
 }
 
-version(unittest)
+version (unittest)
 {
     static import std.internal.math.biguintnoasm;
     import core.stdc.stdio : printf;
@@ -911,7 +911,7 @@ version(unittest)
     }
 }
 //version = timings;
-version(timings)
+version (timings)
 {
     static import std.internal.math.biguintnoasm;
     import core.stdc.stdio : printf;

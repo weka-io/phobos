@@ -200,7 +200,7 @@ void log(int line = __LINE__, string file = __FILE__,
     lazy bool condition, lazy A args)
 if (args.length != 1)
 {
-version(LDC) pragma(inline, true); // Must inline because of __FILE__ as template parameter
+version (LDC) pragma(inline, true); // Must inline because of __FILE__ as template parameter
     static if (isLoggingActive)
     {
         if (ll >= moduleLogLevel!moduleName)
@@ -245,7 +245,7 @@ void log(int line = __LINE__, string file = __FILE__,
     string moduleName = __MODULE__, A...)(const LogLevel ll, lazy A args)
 if (args.length > 1 && !is(Unqual!(A[0]) : bool))
 {
-version(LDC) pragma(inline, true); // Must inline because of __FILE__ as template parameter
+version (LDC) pragma(inline, true); // Must inline because of __FILE__ as template parameter
     static if (isLoggingActive)
     {
         if (ll >= moduleLogLevel!moduleName)
@@ -291,7 +291,7 @@ void log(int line = __LINE__, string file = __FILE__,
     string moduleName = __MODULE__, A...)(lazy bool condition, lazy A args)
 if (args.length != 1)
 {
-version(LDC) pragma(inline, true); // Must inline because of __FILE__ as template parameter
+version (LDC) pragma(inline, true); // Must inline because of __FILE__ as template parameter
     static if (isLoggingActive)
     {
         stdThreadLocalLog.log!(line, file, funcName, prettyFuncName, moduleName)
@@ -331,7 +331,7 @@ if ((args.length > 1 && !is(Unqual!(A[0]) : bool)
     && !is(Unqual!(A[0]) == LogLevel))
     || args.length == 0)
 {
-version(LDC) pragma(inline, true); // Must inline because of __FILE__ as template parameter
+version (LDC) pragma(inline, true); // Must inline because of __FILE__ as template parameter
     static if (isLoggingActive)
     {
         stdThreadLocalLog.log!(line, file, funcName,
@@ -373,7 +373,7 @@ void logf(int line = __LINE__, string file = __FILE__,
     string moduleName = __MODULE__, A...)(const LogLevel ll,
     lazy bool condition, lazy string msg, lazy A args)
 {
-version(LDC) pragma(inline, true); // Must inline because of __FILE__ as template parameter
+version (LDC) pragma(inline, true); // Must inline because of __FILE__ as template parameter
     static if (isLoggingActive)
     {
         if (ll >= moduleLogLevel!moduleName)
@@ -1851,7 +1851,7 @@ package class TestLogger : Logger
     }
 }
 
-version(unittest) private void testFuncNames(Logger logger) @safe
+version (unittest) private void testFuncNames(Logger logger) @safe
 {
     string s = "I'm here";
     logger.log(s);

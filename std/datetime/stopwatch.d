@@ -49,7 +49,7 @@ module std.datetime.stopwatch;
 
 public import core.time;
 import std.typecons : Flag;
-version(LDC) import ldc.attributes;
+version (LDC) import ldc.attributes;
 
 /++
     Used by StopWatch to indicate whether it should start immediately upon

@@ -33,18 +33,18 @@ Idioms:
 */
 module std.internal.math.biguintcore;
 
-version(D_InlineAsm_X86)
+version (D_InlineAsm_X86)
 {
     static import std.internal.math.biguintx86;
 }
-version(LDC)
+version (LDC)
 {
-    version(D_InlineAsm_X86)
+    version (D_InlineAsm_X86)
         version = HaveAsmVersion;
 
-    version(ARM)
+    version (ARM)
     {
-        version(ARM_Thumb) {}
+        version (ARM_Thumb) {}
         else
         {
             static import std.internal.math.biguintarm;
@@ -72,16 +72,16 @@ private:
 // dipatchers to the right low-level primitives. Added to allow BigInt CTFE for
 // 32 bit systems (issue 14767) although it's used by the other architectures too.
 // See comments below in case it has to be refactored.
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteAddSub(char op)(uint[] dest, const(uint)[] src1, const (uint)[] src2, uint carry)
 {
     // must be checked before, otherwise D_InlineAsm_X86 is true.
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteAddSub!op(dest, src1, src2, carry);
     // Runtime.
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteAddSub!op(dest, src1, src2, carry);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteAddSub!op(dest, src1, src2, carry);
     // Runtime if no asm available.
     else
@@ -90,140 +90,140 @@ uint multibyteAddSub(char op)(uint[] dest, const(uint)[] src1, const (uint)[] sr
 // Any other architecture
 else alias multibyteAddSub = std.internal.math.biguintnoasm.multibyteAddSub;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteIncrementAssign(char op)(uint[] dest, uint carry)
 {
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteIncrementAssign!op(dest, carry);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteIncrementAssign!op(dest, carry);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteIncrementAssign!op(dest, carry);
     else
         return std.internal.math.biguintnoasm.multibyteIncrementAssign!op(dest, carry);
 }
 else alias multibyteIncrementAssign = std.internal.math.biguintnoasm.multibyteIncrementAssign;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteShl()(uint[] dest, const(uint)[] src, uint numbits)
 {
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteShl(dest, src, numbits);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteShl(dest, src, numbits);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteShl(dest, src, numbits);
     else
         return std.internal.math.biguintnoasm.multibyteShl(dest, src, numbits);
 }
 else alias multibyteShl = std.internal.math.biguintnoasm.multibyteShl;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 void multibyteShr()(uint[] dest, const(uint)[] src, uint numbits)
 {
     if (__ctfe)
         std.internal.math.biguintnoasm.multibyteShr(dest, src, numbits);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         std.internal.math.biguintx86.multibyteShr(dest, src, numbits);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         std.internal.math.biguintarm.multibyteShr(dest, src, numbits);
     else
         std.internal.math.biguintnoasm.multibyteShr(dest, src, numbits);
 }
 else alias multibyteShr = std.internal.math.biguintnoasm.multibyteShr;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteMul()(uint[] dest, const(uint)[] src, uint multiplier, uint carry)
 {
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteMul(dest, src, multiplier, carry);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteMul(dest, src, multiplier, carry);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteMul(dest, src, multiplier, carry);
     else
         return std.internal.math.biguintnoasm.multibyteMul(dest, src, multiplier, carry);
 }
 else alias multibyteMul = std.internal.math.biguintnoasm.multibyteMul;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteMulAdd(char op)(uint[] dest, const(uint)[] src, uint multiplier, uint carry)
 {
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteMulAdd!op(dest, src, multiplier, carry);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteMulAdd!op(dest, src, multiplier, carry);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteMulAdd!op(dest, src, multiplier, carry);
     else
         return std.internal.math.biguintnoasm.multibyteMulAdd!op(dest, src, multiplier, carry);
 }
 else alias multibyteMulAdd = std.internal.math.biguintnoasm.multibyteMulAdd;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 void multibyteMultiplyAccumulate()(uint[] dest, const(uint)[] left, const(uint)[] right)
 {
     if (__ctfe)
         std.internal.math.biguintnoasm.multibyteMultiplyAccumulate(dest, left, right);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         std.internal.math.biguintx86.multibyteMultiplyAccumulate(dest, left, right);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         std.internal.math.biguintarm.multibyteMultiplyAccumulate(dest, left, right);
     else
         std.internal.math.biguintnoasm.multibyteMultiplyAccumulate(dest, left, right);
 }
 else alias multibyteMultiplyAccumulate = std.internal.math.biguintnoasm.multibyteMultiplyAccumulate;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 uint multibyteDivAssign()(uint[] dest, uint divisor, uint overflow)
 {
     if (__ctfe)
         return std.internal.math.biguintnoasm.multibyteDivAssign(dest, divisor, overflow);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         return std.internal.math.biguintx86.multibyteDivAssign(dest, divisor, overflow);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         return std.internal.math.biguintarm.multibyteDivAssign(dest, divisor, overflow);
     else
         return std.internal.math.biguintnoasm.multibyteDivAssign(dest, divisor, overflow);
 }
 else alias multibyteDivAssign = std.internal.math.biguintnoasm.multibyteDivAssign;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 void multibyteAddDiagonalSquares()(uint[] dest, const(uint)[] src)
 {
     if (__ctfe)
         std.internal.math.biguintnoasm.multibyteAddDiagonalSquares(dest, src);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         std.internal.math.biguintx86.multibyteAddDiagonalSquares(dest, src);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         std.internal.math.biguintarm.multibyteAddDiagonalSquares(dest, src);
     else
         std.internal.math.biguintnoasm.multibyteAddDiagonalSquares(dest, src);
 }
 else alias multibyteAddDiagonalSquares = std.internal.math.biguintnoasm.multibyteAddDiagonalSquares;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 void multibyteTriangleAccumulate()(uint[] dest, const(uint)[] x)
 {
     if (__ctfe)
         std.internal.math.biguintnoasm.multibyteTriangleAccumulate(dest, x);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         std.internal.math.biguintx86.multibyteTriangleAccumulate(dest, x);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         std.internal.math.biguintarm.multibyteTriangleAccumulate(dest, x);
     else
         std.internal.math.biguintnoasm.multibyteTriangleAccumulate(dest, x);
 }
 else alias multibyteTriangleAccumulate = std.internal.math.biguintnoasm.multibyteTriangleAccumulate;
 
-version(HaveAsmVersion)
+version (HaveAsmVersion)
 void multibyteSquare()(BigDigit[] result, const(BigDigit)[] x)
 {
     if (__ctfe)
         std.internal.math.biguintnoasm.multibyteSquare(result, x);
-    else version(D_InlineAsm_X86)
+    else version (D_InlineAsm_X86)
         std.internal.math.biguintx86.multibyteSquare(result, x);
-    else version(LDC_ARM_asm)
+    else version (LDC_ARM_asm)
         std.internal.math.biguintarm.multibyteSquare(result, x);
     else
         std.internal.math.biguintnoasm.multibyteSquare(result, x);
@@ -1375,10 +1375,10 @@ int highestPowerBelowUlongMax(uint x) pure nothrow @safe
      return 2;
 }
 
-version(unittest)
+version (unittest)
 {
 
-int slowHighestPowerBelowUintMax(uint x) pure nothrow @safe
+private int slowHighestPowerBelowUintMax(uint x) pure nothrow @safe
 {
      int pwr = 1;
      for (ulong q = x;x*q < cast(ulong) uint.max; )
@@ -2431,7 +2431,7 @@ void schoolbookDivMod(BigDigit [] quotient, BigDigit [] u, in BigDigit [] v)
         else
         {
             uint ulo = u[j + v.length - 2];
-            version(D_InlineAsm_X86)
+            version (D_InlineAsm_X86)
             {
                 // Note: On DMD, this is only ~10% faster than the non-asm code.
                 uint *p = &u[j + v.length - 1];
@@ -2457,7 +2457,7 @@ div3by2done:    ;
                 }
             }
             else
-            { // version(InlineAsm)
+            { // version (InlineAsm)
                 ulong uu = (cast(ulong)(u[j + v.length]) << 32) | u[j + v.length - 1];
                 immutable bigqhat = uu / vhi;
                 ulong rhat =  uu - bigqhat * vhi;
@@ -2470,7 +2470,7 @@ again:
                     if (!(rhat & 0xFFFF_FFFF_0000_0000L))
                         goto again;
                 }
-            } // version(InlineAsm)
+            } // version (InlineAsm)
         }
         // Multiply and subtract.
         uint carry = multibyteMulAdd!('-')(u[j .. j + v.length], v, qhat, 0);
