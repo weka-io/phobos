@@ -140,12 +140,15 @@ version (LDC)
 
     version (CRuntime_Microsoft) version = LDC_MSVCRT;
 
-    version (LDC_MSVCRT) {}
+    version (LDC_MSVCRT)   {}
+    else version (Android) {}
     else
     {
         version (X86)    version = INLINE_YL2X;
         version (X86_64) version = INLINE_YL2X;
     }
+
+    version (Android) version (X86_64) version = AndroidX64;
 }
 
 version (DigitalMars)
@@ -172,7 +175,8 @@ else version (D_InlineAsm_X86_64)
 }
 
 // define InlineAsm*_X87 versions if real is defined as 80-bit x87
-version (LDC_MSVCRT) {}
+version (LDC_MSVCRT)   {}
+else version (Android) {}
 else
 {
     version (D_InlineAsm_X86)     version = InlineAsm_X86_X87;
@@ -4755,11 +4759,12 @@ real hypot(real x, real y) @safe pure nothrow @nogc
 
     static assert(2*(SQRTMAX/2)*(SQRTMAX/2) <= real.max);
 
-    version (AArch64)
+    static if (floatTraits!(real).realFormat == RealFormat.ieeeQuadruple)
     {
         // This static assert overflows when cross-compiling from lower-precision
         // floating-point to Quadruple.
-        pragma(msg, "hypot static assert disabled for AArch64 cross-compilation");
+        pragma(msg, "hypot static assert disabled for cross-compilation to 128-bit
+                     floating-point");
     }
     else
     // Proves that sqrt(real.max) ~~  0.5/sqrt(real.min_normal)
@@ -7271,7 +7276,22 @@ Returns:
 R copysign(R, X)(R to, X from) @trusted pure nothrow @nogc
 if (isFloatingPoint!(R) && isFloatingPoint!(X))
 {
-  version (LDC)
+  version (AndroidX64)
+  {
+    static if (is(Unqual!R == real))
+    {
+      // LLVM gets confused by the llvm.copysign.f128 intrinsic on x64, so call
+      // copysignl directly for reals instead.
+      pragma(inline, true);
+      return core.stdc.math.copysignl(to, cast(R) from);
+    }
+    else
+    {
+      pragma(inline, true);
+      return llvm_copysign(to, cast(R) from);
+    }
+  }
+  else version (LDC)
   {
     pragma(inline, true);
     return llvm_copysign(to, cast(R) from);
