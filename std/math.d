@@ -164,6 +164,8 @@ version (MIPS32)    version = MIPS_Any;
 version (MIPS64)    version = MIPS_Any;
 version (AArch64)   version = ARM_Any;
 version (ARM)       version = ARM_Any;
+version (SPARC)     version = SPARC_Any;
+version (SPARC64)   version = SPARC_Any;
 
 version (D_InlineAsm_X86)
 {
@@ -6340,7 +6342,7 @@ nothrow @nogc:
                                  | inexactException,
         }
     }
-    else version (SPARC64)
+    else version (SPARC_Any)
     {
         enum : ExceptionMask
         {
@@ -6494,7 +6496,7 @@ private:
     {
         alias ControlState = uint;
     }
-    else version (SPARC64)
+    else version (SPARC_Any)
     {
         alias ControlState = ulong;
     }
@@ -9119,7 +9121,6 @@ private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
                 fstp    ST(0)                   ; // dump x
                 align   4                       ;
         return_ST:                              ;
-                ;
             }
         }
         else version (linux)
@@ -9147,7 +9148,6 @@ private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
                 fstp    ST(0)                   ; // dump x
                 align   4                       ;
         return_ST:                              ;
-                ;
             }
         }
         else version (OSX)
@@ -9175,7 +9175,6 @@ private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
                 fstp    ST(0)                   ; // dump x
                 align   4                       ;
         return_ST:                              ;
-                ;
             }
         }
         else version (FreeBSD)
@@ -9203,7 +9202,6 @@ private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
                 fstp    ST(0)                   ; // dump x
                 align   4                       ;
         return_ST:                              ;
-                ;
             }
         }
         else version (Solaris)
@@ -9231,7 +9229,6 @@ private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
                 fstp    ST(0)                   ; // dump x
                 align   4                       ;
         return_ST:                              ;
-                ;
             }
         }
         else version (DragonFlyBSD)
@@ -9259,7 +9256,6 @@ private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
                 fstp    ST(0)                   ; // dump x
                 align   4                       ;
         return_ST:                              ;
-                ;
             }
         }
         else
