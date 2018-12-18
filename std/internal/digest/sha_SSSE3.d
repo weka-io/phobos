@@ -15,11 +15,7 @@
  */
 module std.internal.digest.sha_SSSE3;
 
-version (Win64)
-{
-    // unsupported calling convention
-}
-else version (D_InlineAsm_X86)
+version (D_InlineAsm_X86)
 {
     version (D_PIC) {} // Bugzilla 9378
     else
