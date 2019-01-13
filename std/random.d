@@ -1649,7 +1649,7 @@ else
 {
     private ulong bootstrapSeed() @nogc nothrow
     {
-        ulong result = void;
+        ulong result;
         enum ulong m = 0xc6a4_a793_5bd1_e995UL; // MurmurHash2_64A constant.
         void updateResult(ulong x)
         {
