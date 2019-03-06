@@ -400,6 +400,7 @@ Example:
 logf(LogLevel.warning, "Hello World %f", 3.1415);
 --------------------
 */
+pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
 void logf(int line = __LINE__, string file = __FILE__,
     string funcName = __FUNCTION__, string prettyFuncName = __PRETTY_FUNCTION__,
     string moduleName = __MODULE__, A...)(const LogLevel ll, lazy string msg,
@@ -431,6 +432,7 @@ Example:
 logf(true, "Hello World %f", 3.1415);
 --------------------
 */
+pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
 void logf(int line = __LINE__, string file = __FILE__,
     string funcName = __FUNCTION__, string prettyFuncName = __PRETTY_FUNCTION__,
     string moduleName = __MODULE__, A...)(lazy bool condition,
@@ -457,6 +459,7 @@ Example:
 logf("Hello World %f", 3.1415);
 --------------------
 */
+pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
 void logf(int line = __LINE__, string file = __FILE__,
     string funcName = __FUNCTION__,
     string prettyFuncName = __PRETTY_FUNCTION__,
@@ -477,6 +480,7 @@ functions.
 */
 template defaultLogFunction(LogLevel ll)
 {
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void defaultLogFunction(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
@@ -490,6 +494,7 @@ template defaultLogFunction(LogLevel ll)
         }
     }
 
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void defaultLogFunction(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
@@ -551,6 +556,7 @@ functions.
 */
 template defaultLogFunctionf(LogLevel ll)
 {
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void defaultLogFunctionf(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
@@ -563,6 +569,7 @@ template defaultLogFunctionf(LogLevel ll)
         }
     }
 
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void defaultLogFunctionf(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
@@ -943,6 +950,7 @@ abstract class Logger
         s.fatal(1337, "is number");
         --------------------
         */
+        pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
         void logImpl(int line = __LINE__, string file = __FILE__,
             string funcName = __FUNCTION__,
             string prettyFuncName = __PRETTY_FUNCTION__,
@@ -990,6 +998,7 @@ abstract class Logger
         s.fatal(true, 1337, "is number");
         --------------------
         */
+        pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
         void logImpl(int line = __LINE__, string file = __FILE__,
             string funcName = __FUNCTION__,
             string prettyFuncName = __PRETTY_FUNCTION__,
@@ -1039,6 +1048,7 @@ abstract class Logger
         s.fatalf(true, "is number %d", 5);
         --------------------
         */
+        pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
         void logImplf(int line = __LINE__, string file = __FILE__,
             string funcName = __FUNCTION__,
             string prettyFuncName = __PRETTY_FUNCTION__,
@@ -1088,6 +1098,7 @@ abstract class Logger
         s.fatalf("is number %d", 5);
         --------------------
         */
+        pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
         void logImplf(int line = __LINE__, string file = __FILE__,
             string funcName = __FUNCTION__,
             string prettyFuncName = __PRETTY_FUNCTION__,
@@ -1159,6 +1170,7 @@ abstract class Logger
     l.log(1337);
     --------------------
     */
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void log(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
@@ -1229,6 +1241,7 @@ abstract class Logger
     s.log(LogLevel.fatal, 1337, "is number");
     --------------------
     */
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void log(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
@@ -1298,6 +1311,7 @@ abstract class Logger
     s.log(false, 1337, "is number");
     --------------------
     */
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void log(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
@@ -1367,6 +1381,7 @@ abstract class Logger
     s.log(1337, "is number");
     --------------------
     */
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void log(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
@@ -1441,6 +1456,7 @@ abstract class Logger
     s.logf(LogLevel.fatal, true ,"%d %s", 1337, "is number");
     --------------------
     */
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void logf(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
@@ -1489,6 +1505,7 @@ abstract class Logger
     s.logf(LogLevel.fatal, "%d %s", 1337, "is number");
     --------------------
     */
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void logf(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
@@ -1538,6 +1555,7 @@ abstract class Logger
     s.logf(true ,"%d %s", 1337, "is number");
     --------------------
     */
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void logf(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
@@ -1585,6 +1603,7 @@ abstract class Logger
     s.logf("%d %s", 1337, "is number");
     --------------------
     */
+    pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
     void logf(int line = __LINE__, string file = __FILE__,
         string funcName = __FUNCTION__,
         string prettyFuncName = __PRETTY_FUNCTION__,
