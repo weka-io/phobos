@@ -439,12 +439,12 @@ if (is(typeof(new E("", string.init, size_t.init)) : Throwable) ||
 }
 
 /// ditto
+pragma(inline, true) // LDC: Must inline because of __FILE__ as template parameter
 T enforce(T, Dg, string file = __FILE__, size_t line = __LINE__)
     (T value, scope Dg dg)
 if (isSomeFunction!Dg && is(typeof( dg() )) &&
     is(typeof({ if (!value) {} })))
 {
-version (LDC) pragma(inline, true); // Must inline because of __FILE__ as template parameter
     if (!value) dg();
     return value;
 }

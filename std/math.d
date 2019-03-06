@@ -2057,12 +2057,15 @@ float atanh(float x) @safe pure nothrow @nogc { return atanh(cast(real) x); }
  * greater than long.max, the result is
  * indeterminate.
  */
+pragma(inline, true) // LDC
 long rndtol(real x) @nogc @safe pure nothrow { pragma(inline, true); return core.math.rndtol(x); }
 //FIXME
 ///ditto
+pragma(inline, true) // LDC
 long rndtol(double x) @safe pure nothrow @nogc { return rndtol(cast(real) x); }
 //FIXME
 ///ditto
+pragma(inline, true) // LDC
 long rndtol(float x) @safe pure nothrow @nogc { return rndtol(cast(real) x); }
 
 ///
@@ -2119,12 +2122,15 @@ deprecated @system unittest
  *      $(TR $(TD +$(INFIN)) $(TD +$(INFIN)) $(TD no))
  *      )
  */
+pragma(inline, true) // LDC
 float sqrt(float x) @nogc @safe pure nothrow { pragma(inline, true); return core.math.sqrt(x); }
 
 /// ditto
+pragma(inline, true) // LDC
 double sqrt(double x) @nogc @safe pure nothrow { pragma(inline, true); return core.math.sqrt(x); }
 
 /// ditto
+pragma(inline, true) // LDC
 real sqrt(real x) @nogc @safe pure nothrow { pragma(inline, true); return core.math.sqrt(x); }
 
 ///
@@ -3909,12 +3915,15 @@ alias FP_ILOGBNAN = core.stdc.math.FP_ILOGBNAN;
  * References: frexp
  */
 
+pragma(inline, true) // LDC
 real ldexp(real n, int exp) @nogc @safe pure nothrow { pragma(inline, true); return core.math.ldexp(n, exp); }
 //FIXME
 ///ditto
+pragma(inline, true) // LDC
 double ldexp(double n, int exp) @safe pure nothrow @nogc { return ldexp(cast(real) n, exp); }
 //FIXME
 ///ditto
+pragma(inline, true) // LDC
 float ldexp(float n, int exp) @safe pure nothrow @nogc { return ldexp(cast(real) n, exp); }
 
 ///
@@ -4856,11 +4865,11 @@ real hypot(real x, real y) @safe pure nothrow @nogc
  * Returns the value of x rounded upward to the next integer
  * (toward positive infinity).
  */
+pragma(inline, true) // LDC
 real ceil(real x) @trusted pure nothrow @nogc
 {
   version (LDC)
   {
-    pragma(inline, true);
     return llvm_ceil(x);
   }
   else
@@ -4933,11 +4942,11 @@ real ceil(real x) @trusted pure nothrow @nogc
 }
 
 /// ditto
+pragma(inline, true) // LDC
 double ceil(double x) @trusted pure nothrow @nogc
 {
   version (LDC)
   {
-    pragma(inline, true);
     return llvm_ceil(x);
   }
   else
@@ -4969,11 +4978,11 @@ double ceil(double x) @trusted pure nothrow @nogc
 }
 
 /// ditto
+pragma(inline, true) // LDC
 float ceil(float x) @trusted pure nothrow @nogc
 {
   version (LDC)
   {
-    pragma(inline, true);
     return llvm_ceil(x);
   }
   else
@@ -5008,11 +5017,11 @@ float ceil(float x) @trusted pure nothrow @nogc
  * Returns the value of x rounded downward to the next integer
  * (toward negative infinity).
  */
+pragma(inline, true) // LDC
 real floor(real x) @trusted pure nothrow @nogc
 {
   version (LDC)
   {
-    pragma(inline, true);
     return llvm_floor(x);
   }
   else
@@ -5083,11 +5092,11 @@ real floor(real x) @trusted pure nothrow @nogc
 }
 
 /// ditto
+pragma(inline, true) // LDC
 double floor(double x) @trusted pure nothrow @nogc
 {
   version (LDC)
   {
-    pragma(inline, true);
     return llvm_floor(x);
   }
   else
@@ -5117,11 +5126,11 @@ double floor(double x) @trusted pure nothrow @nogc
 }
 
 /// ditto
+pragma(inline, true) // LDC
 float floor(float x) @trusted pure nothrow @nogc
 {
   version (LDC)
   {
-    pragma(inline, true);
     return llvm_floor(x);
   }
   else
@@ -7294,6 +7303,7 @@ Params:
 Returns:
     a value composed of to with from's sign bit.
  */
+pragma(inline, true) // LDC
 R copysign(R, X)(R to, X from) @trusted pure nothrow @nogc
 if (isFloatingPoint!(R) && isFloatingPoint!(X))
 {
@@ -7303,18 +7313,15 @@ if (isFloatingPoint!(R) && isFloatingPoint!(X))
     {
       // LLVM gets confused by the llvm.copysign.f128 intrinsic on x64, so call
       // copysignl directly for reals instead.
-      pragma(inline, true);
       return core.stdc.math.copysignl(to, cast(R) from);
     }
     else
     {
-      pragma(inline, true);
       return llvm_copysign(to, cast(R) from);
     }
   }
   else version (LDC)
   {
-    pragma(inline, true);
     return llvm_copysign(to, cast(R) from);
   }
   else
@@ -9096,11 +9103,11 @@ if (isFloatingPoint!T1 && isFloatingPoint!T2)
     return r;
 }
 
+pragma(inline, true) // LDC
 private real polyImpl(real x, in real[] A) @trusted pure nothrow @nogc
 {
     version (LDC)
     {
-        pragma(inline, true);
         return polyImplBase(x, A);
     }
     else version (D_InlineAsm_X86)
