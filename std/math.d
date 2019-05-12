@@ -3309,19 +3309,18 @@ private T exp2Impl(T)(T x) @nogc @safe pure nothrow
  * and is the preferred method when both are required.
  */
 deprecated("Use std.complex.expi")
+pragma(inline, true) // LDC
 creal expi(real y) @trusted pure nothrow @nogc
 {
     version (LDC)
     {
         // LDC-specific: don't swap x87 registers for result
-        version (none) // Was InlineAsm_X86_Any_X87 but this causes assertion failures
+        version (InlineAsm_X86_Any_X87)
         {
-            return __asm!creal("fsincos", "={st},={st(1)},{st}", y);
+            if (!__ctfe)
+                return __asm!creal("fsincos", "={st},={st(1)},{st}", y);
         }
-        else
-        {
-            return cos(y) + sin(y)*1i;
-        }
+        return cos(y) + sin(y)*1i;
     }
     else version (InlineAsm_X86_Any)
     {
@@ -3355,7 +3354,16 @@ creal expi(real y) @trusted pure nothrow @nogc
 deprecated
 @safe pure nothrow @nogc unittest
 {
-    assert(expi(1.3e5L) == cos(1.3e5L) + sin(1.3e5L) * 1i);
+    version (InlineAsm_X86_Any_X87) // LDC: relaxed precision due to LLVM cos/sin intrinsics
+    {
+        const y = 1.3e5L;
+        const r = expi(y);
+        assert(feqrel(r.re, cos(y)) >= 52);
+        assert(feqrel(r.im, sin(y)) >= 52);
+    }
+    else
+        assert(expi(1.3e5L) == cos(1.3e5L) + sin(1.3e5L) * 1i);
+
     assert(expi(0.0L) == 1L + 0.0Li);
 }
 
