@@ -2404,10 +2404,13 @@ private T expImpl(T)(T x) @safe pure nothrow @nogc
 
 @safe @nogc nothrow unittest
 {
-    FloatingPointControl ctrl;
-    if (FloatingPointControl.hasExceptionTraps)
-        ctrl.disableExceptions(FloatingPointControl.allExceptions);
-    ctrl.rounding = FloatingPointControl.roundToNearest;
+    version (InlineAsm_X86_Any)
+    {
+        FloatingPointControl ctrl;
+        if (FloatingPointControl.hasExceptionTraps)
+            ctrl.disableExceptions(FloatingPointControl.allExceptions);
+        ctrl.rounding = FloatingPointControl.roundToNearest;
+    }
 
     static void testExp(T)()
     {
@@ -2491,10 +2494,10 @@ private T expImpl(T)(T x) @safe pure nothrow @nogc
 
         const minEqualMantissaBits = T.mant_dig - 2;
         T x;
-        IeeeFlags f;
+        version (InlineAsm_X86_Any) IeeeFlags f;
         foreach (ref pair; exptestpoints)
         {
-            resetIeeeFlags();
+            version (InlineAsm_X86_Any) resetIeeeFlags();
             x = exp(pair[0]);
             //printf("exp(%La) = %La, should be %La\n", cast(real) pair[0], cast(real) x, cast(real) pair[1]);
             assert(feqrel(x, pair[1]) >= minEqualMantissaBits);
@@ -2506,17 +2509,17 @@ private T expImpl(T)(T x) @safe pure nothrow @nogc
         assert(exp(cast(T) 0.0) == 1.0);
 
         // NaN propagation. Doesn't set flags, bcos was already NaN.
-        resetIeeeFlags();
+        version (InlineAsm_X86_Any) resetIeeeFlags();
         x = exp(T.nan);
-        f = ieeeFlags;
+        version (InlineAsm_X86_Any) f = ieeeFlags;
         assert(isIdentical(abs(x), T.nan));
-        assert(f.flags == 0);
+        version (InlineAsm_X86_Any) assert(f.flags == 0);
 
-        resetIeeeFlags();
+        version (InlineAsm_X86_Any) resetIeeeFlags();
         x = exp(-T.nan);
-        f = ieeeFlags;
+        version (InlineAsm_X86_Any) f = ieeeFlags;
         assert(isIdentical(abs(x), T.nan));
-        assert(f.flags == 0);
+        version (InlineAsm_X86_Any) assert(f.flags == 0);
 
         x = exp(NaN(0x123));
         assert(isIdentical(x, NaN(0x123)));
@@ -5351,14 +5354,16 @@ float rint(float x) @safe pure nothrow @nogc { return rint(cast(real) x); }
 ///
 @safe unittest
 {
-    resetIeeeFlags();
-    assert(rint(0.4) == 0);
     version (LDC)
     {
         // inexact bit not set with enabled optimizations
     }
-    else
+    else version (InlineAsm_X86_Any)
+    {
+        resetIeeeFlags();
+        assert(rint(0.4) == 0);
         assert(ieeeFlags.inexact);
+    }
 
     assert(rint(0.5) == 0);
     assert(rint(0.6) == 1);
@@ -6065,28 +6070,31 @@ public:
 @optStrategy("none") // LDC
 @safe unittest
 {
-    static void func() {
-        int a = 10 * 10;
+    version (InlineAsm_X86_Any)
+    {
+        static void func() {
+            int a = 10 * 10;
+        }
+
+        real a = 3.5;
+        // Set all the flags to zero
+        resetIeeeFlags();
+        assert(!ieeeFlags.divByZero);
+        // Perform a division by zero.
+        a /= 0.0L;
+        assert(a == real.infinity);
+        assert(ieeeFlags.divByZero);
+        // Create a NaN
+        a *= 0.0L;
+        assert(ieeeFlags.invalid);
+        assert(isNaN(a));
+
+        // Check that calling func() has no effect on the
+        // status flags.
+        IeeeFlags f = ieeeFlags;
+        func();
+        assert(ieeeFlags == f);
     }
-
-    real a = 3.5;
-    // Set all the flags to zero
-    resetIeeeFlags();
-    assert(!ieeeFlags.divByZero);
-    // Perform a division by zero.
-    a /= 0.0L;
-    assert(a == real.infinity);
-    assert(ieeeFlags.divByZero);
-    // Create a NaN
-    a *= 0.0L;
-    assert(ieeeFlags.invalid);
-    assert(isNaN(a));
-
-    // Check that calling func() has no effect on the
-    // status flags.
-    IeeeFlags f = ieeeFlags;
-    func();
-    assert(ieeeFlags == f);
 }
 
 version (LDC)
@@ -6097,7 +6105,7 @@ version (LDC)
     }
 }
 else
-version (D_HardFloat) @safe unittest
+version (InlineAsm_X86_Any) @safe unittest
 {
     import std.meta : AliasSeq;
 
@@ -6174,14 +6182,17 @@ void resetIeeeFlags() @trusted nothrow @nogc
 @optStrategy("none") // LDC, required for the IEEE flags check
 @safe unittest
 {
-    resetIeeeFlags();
-    real a = 3.5;
-    a /= 0.0L;
-    assert(a == real.infinity);
-    assert(ieeeFlags.divByZero);
+    version (InlineAsm_X86_Any)
+    {
+        resetIeeeFlags();
+        real a = 3.5;
+        a /= 0.0L;
+        assert(a == real.infinity);
+        assert(ieeeFlags.divByZero);
 
-    resetIeeeFlags();
-    assert(!ieeeFlags.divByZero);
+        resetIeeeFlags();
+        assert(!ieeeFlags.divByZero);
+    }
 }
 
 /// Returns: snapshot of the current state of the floating-point status flags
@@ -6194,16 +6205,19 @@ void resetIeeeFlags() @trusted nothrow @nogc
 @optStrategy("none") // LDC, required for the IEEE flags check
 @safe nothrow unittest
 {
-    resetIeeeFlags();
-    real a = 3.5;
+    version (InlineAsm_X86_Any)
+    {
+        resetIeeeFlags();
+        real a = 3.5;
 
-    a /= 0.0L;
-    assert(a == real.infinity);
-    assert(ieeeFlags.divByZero);
+        a /= 0.0L;
+        assert(a == real.infinity);
+        assert(ieeeFlags.divByZero);
 
-    a *= 0.0L;
-    assert(isNaN(a));
-    assert(ieeeFlags.invalid);
+        a *= 0.0L;
+        assert(isNaN(a));
+        assert(ieeeFlags.invalid);
+    }
 }
 
 /** Control the Floating point hardware
@@ -6809,7 +6823,7 @@ private:
 @optStrategy("none") // LDC
 @safe unittest
 {
-    version (D_HardFloat)
+    version (InlineAsm_X86_Any)
     {
         FloatingPointControl fpctrl;
 
@@ -6824,7 +6838,7 @@ private:
     }
 }
 
-version (D_HardFloat) @safe unittest
+version (InlineAsm_X86_Any) @safe unittest
 {
     void ensureDefaults()
     {
@@ -6868,7 +6882,7 @@ version (LDC)
     // Win64: debug and release fail
 }
 else
-version (D_HardFloat) @safe unittest // rounding
+version (InlineAsm_X86_Any) @safe unittest // rounding
 {
     import std.meta : AliasSeq;
 
