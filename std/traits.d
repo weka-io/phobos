@@ -42,6 +42,7 @@
  *           $(LREF hasElaborateAssign)
  *           $(LREF hasElaborateCopyConstructor)
  *           $(LREF hasElaborateDestructor)
+ *           $(LREF hasElaborateMove)
  *           $(LREF hasIndirections)
  *           $(LREF hasMember)
  *           $(LREF hasStaticMember)
@@ -3791,6 +3792,47 @@ template hasElaborateDestructor(S)
     static assert( hasElaborateDestructor!S7);
 }
 
+/**
+ True if `S` or any type embedded directly in the representation of `S`
+ defines elaborate move semantics. Elaborate move semantics are
+ introduced by defining `opPostMove(ref typeof(this))` for a `struct`.
+
+ Classes and unions never have elaborate move semantics.
+ */
+template hasElaborateMove(S)
+{
+    import core.internal.traits : hasElabMove = hasElaborateMove;
+    alias hasElaborateMove = hasElabMove!(S);
+}
+
+///
+@safe unittest
+{
+    static assert(!hasElaborateMove!int);
+
+    static struct S1 { }
+    static struct S2 { void opPostMove(ref S2) {} }
+    static struct S3 { void opPostMove(inout ref S3) inout {} }
+    static struct S4 { void opPostMove(const ref S4) {} }
+    static struct S5 { void opPostMove(S5) {} }
+    static struct S6 { void opPostMove(int) {} }
+    static struct S7 { S3[1] field; }
+    static struct S8 { S3[] field; }
+    static struct S9 { S3[0] field; }
+    static struct S10 { @disable this(); S3 field; }
+    static assert(!hasElaborateMove!S1);
+    static assert( hasElaborateMove!S2);
+    static assert( hasElaborateMove!S3);
+    static assert( hasElaborateMove!(immutable S3));
+    static assert( hasElaborateMove!S4);
+    static assert(!hasElaborateMove!S5);
+    static assert(!hasElaborateMove!S6);
+    static assert( hasElaborateMove!S7);
+    static assert(!hasElaborateMove!S8);
+    static assert(!hasElaborateMove!S9);
+    static assert( hasElaborateMove!S10);
+}
+
 package alias Identity(alias A) = A;
 
 /**
@@ -6606,9 +6648,19 @@ package template convertToString(T)
 /**
  * Detect whether type `T` is a string that will be autodecoded.
  *
- * All arrays that use char, wchar, and their qualified versions are narrow
- * strings. (Those include string and wstring).
- * Aggregates that implicitly cast to narrow strings are included.
+ * Given a type `S` that is one of:
+ * $(OL
+ *  $(LI `const(char)[]`)
+ *  $(LI `const(wchar)[]`)
+ * )
+ * Type `T` can be one of:
+ * $(OL
+ *    $(LI `S`)
+ *    $(LI implicitly convertible to `T`)
+ *    $(LI an enum with a base type `T`)
+ *    $(LI an aggregate with a base type `T`)
+ * )
+ * with the proviso that `T` cannot be a static array.
  *
  * Params:
  *      T = type to be tested
@@ -6635,9 +6687,30 @@ template isAutodecodableString(T)
         string s;
         alias s this;
     }
-    assert(isAutodecodableString!wstring);
-    assert(isAutodecodableString!Stringish);
-    assert(!isAutodecodableString!dstring);
+    static assert(isAutodecodableString!wstring);
+    static assert(isAutodecodableString!Stringish);
+    static assert(!isAutodecodableString!dstring);
+
+    enum E : const(char)[3] { X = "abc" }
+    enum F : const(char)[] { X = "abc" }
+    enum G : F { X = F.init }
+
+    static assert(isAutodecodableString!(char[]));
+    static assert(!isAutodecodableString!(E));
+    static assert(isAutodecodableString!(F));
+    static assert(isAutodecodableString!(G));
+
+    struct Stringish2
+    {
+        Stringish s;
+        alias s this;
+    }
+
+    enum H : Stringish { X = Stringish() }
+    enum I : Stringish2 { X = Stringish2() }
+
+    static assert(isAutodecodableString!(H));
+    static assert(isAutodecodableString!(I));
 }
 
 /**
@@ -8311,6 +8384,7 @@ Note:
     nested structs or unions.
  */
 template getSymbolsByUDA(alias symbol, alias attribute)
+if (isAggregateType!symbol)
 {
     alias membersWithUDA = getSymbolsByUDAImpl!(symbol, attribute, __traits(allMembers, symbol));
 
@@ -8435,6 +8509,15 @@ template getSymbolsByUDA(alias symbol, alias attribute)
 
     static assert(getSymbolsByUDA!(A, attr1).length == 2);
     static assert(getSymbolsByUDA!(A, attr2).length == 1);
+}
+
+// Issue 19105
+@safe unittest
+{
+    struct A(Args...) {}
+    struct B {}
+    // modules cannot be passed as the first argument of getSymbolsByUDA
+    static assert(!__traits(compiles, A!( getSymbolsByUDA!(traits, B))));
 }
 
 // #15335: getSymbolsByUDA fails if type has private members
