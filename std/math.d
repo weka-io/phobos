@@ -7537,11 +7537,19 @@ int signbit(X)(X x) @nogc @trusted pure nothrow
     return ((cast(ubyte *)&x)[F.SIGNPOS_BYTE] & 0x80) != 0;
 }
 
+// On AArch64, negating a NaN doesn't flip the sign bit.
+// This should be fixed with LLVM 10's fneg instruction, see
+// http://lists.llvm.org/pipermail/llvm-dev/2018-September/126017.html.
+version (LDC) version (AArch64) version = LDC_AArch64;
+
 ///
 @nogc @safe pure nothrow unittest
 {
     assert(!signbit(float.nan));
+  version (LDC_AArch64) {} else
+  {
     assert(signbit(-float.nan));
+  }
     assert(!signbit(168.1234f));
     assert(signbit(-168.1234f));
     assert(!signbit(0.0f));
@@ -7550,7 +7558,10 @@ int signbit(X)(X x) @nogc @trusted pure nothrow
     assert(!signbit(float.max));
 
     assert(!signbit(double.nan));
+  version (LDC_AArch64) {} else
+  {
     assert(signbit(-double.nan));
+  }
     assert(!signbit(168.1234));
     assert(signbit(-168.1234));
     assert(!signbit(0.0));
@@ -7559,7 +7570,10 @@ int signbit(X)(X x) @nogc @trusted pure nothrow
     assert(!signbit(double.max));
 
     assert(!signbit(real.nan));
+  version (LDC_AArch64) {} else
+  {
     assert(signbit(-real.nan));
+  }
     assert(!signbit(168.1234L));
     assert(signbit(-168.1234L));
     assert(!signbit(0.0L));
@@ -7572,7 +7586,10 @@ int signbit(X)(X x) @nogc @trusted pure nothrow
 {
     // CTFE
     static assert(!signbit(float.nan));
+  version (LDC_AArch64) {} else
+  {
     static assert(signbit(-float.nan));
+  }
     static assert(!signbit(168.1234f));
     static assert(signbit(-168.1234f));
     static assert(!signbit(0.0f));
@@ -7581,7 +7598,10 @@ int signbit(X)(X x) @nogc @trusted pure nothrow
     static assert(!signbit(float.max));
 
     static assert(!signbit(double.nan));
+  version (LDC_AArch64) {} else
+  {
     static assert(signbit(-double.nan));
+  }
     static assert(!signbit(168.1234));
     static assert(signbit(-168.1234));
     static assert(!signbit(0.0));
@@ -7590,7 +7610,10 @@ int signbit(X)(X x) @nogc @trusted pure nothrow
     static assert(!signbit(double.max));
 
     static assert(!signbit(real.nan));
+  version (LDC_AArch64) {} else
+  {
     static assert(signbit(-real.nan));
+  }
     static assert(!signbit(168.1234L));
     static assert(signbit(-168.1234L));
     static assert(!signbit(0.0L));
