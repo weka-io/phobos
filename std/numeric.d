@@ -620,7 +620,7 @@ public:
         AliasSeq!(
             CustomFloat!(5, 10),
             CustomFloat!(5, 11, CustomFloatFlags.ieee ^ CustomFloatFlags.signed),
-            CustomFloat!(1, 15, CustomFloatFlags.ieee ^ CustomFloatFlags.signed),
+            CustomFloat!(1, 7, CustomFloatFlags.ieee ^ CustomFloatFlags.signed),
             CustomFloat!(4, 3, CustomFloatFlags.ieee | CustomFloatFlags.probability ^ CustomFloatFlags.signed)
         );
 
@@ -1498,8 +1498,8 @@ T findRoot(T, R)(scope R delegate(T) f, in T a, in T b,
         //++numCalls;
         if (x>float.max)
             x = float.max;
-        if (x<-double.max)
-            x = -double.max;
+        if (x<-float.max)
+            x = -float.max;
         // This has a single real root at -59.286543284815
         return 0.386*x*x*x + 23*x*x + 15.7*x + 525.2;
     }
