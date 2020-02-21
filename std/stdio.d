@@ -401,14 +401,6 @@ public:
     }
 }
 
-// @@@DEPRECATED_2019-01@@@
-deprecated("Use .byRecord")
-struct ByRecord(Fields...)
-{
-    ByRecordImpl!Fields payload;
-    alias payload this;
-}
-
 template byRecord(Fields...)
 {
     auto byRecord(File f, string format)
@@ -2309,14 +2301,6 @@ Allows to directly use range operations on lines of a file.
         }
     }
 
-    // @@@DEPRECATED_2019-01@@@
-    deprecated("Use .byLine")
-    struct ByLine(Char, Terminator)
-    {
-        ByLineImpl!(Char, Terminator) payload;
-        alias payload this;
-    }
-
 /**
 Returns an $(REF_ALTTEXT input range, isInputRange, std,range,primitives)
 set up to read from the file handle one line at a time.
@@ -2807,14 +2791,6 @@ $(REF readText, std,file)
             }
             prime();
         }
-    }
-
-    // @@@DEPRECATED_2019-01@@@
-    deprecated("Use .byChunk")
-    struct ByChunk
-    {
-        ByChunkImpl payload;
-        alias payload this;
     }
 
 /**
@@ -5598,7 +5574,7 @@ version (linux)
     }
 }
 
-version (unittest) private string testFilename(string file = __FILE__, size_t line = __LINE__) @safe
+version (StdUnittest) private string testFilename(string file = __FILE__, size_t line = __LINE__) @safe
 {
     import std.conv : text;
     import std.file : deleteme;

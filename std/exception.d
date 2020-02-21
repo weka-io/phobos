@@ -1310,7 +1310,7 @@ bool mayPointTo(S, T)(auto ref const shared S source, ref const shared T target)
 }
 
 
-version (unittest)
+version (StdUnittest)
 {
     // 17084 : the bug doesn't happen if these declarations are
     // in the unittest block (static or not).
@@ -1852,7 +1852,7 @@ expression.
     static assert(!__traits(compiles, (new Object()).ifThrown(e=>1)));
 }
 
-version (unittest) package
+version (StdUnittest) package
 void assertCTFEable(alias dg)()
 {
     static assert({ cast(void) dg(); return true; }());
