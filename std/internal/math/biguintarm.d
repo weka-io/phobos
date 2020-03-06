@@ -27,7 +27,7 @@ import ldc.llvmasm;
 
 static import stdnoasm = std.internal.math.biguintnoasm;
 
-@system:
+@trusted:
 
 public:
 alias BigDigit = stdnoasm.BigDigit; // A Bignum is an array of BigDigits.
