@@ -586,7 +586,8 @@ file.
         return this;
     }
 
-    @safe unittest // bugzilla 20129
+     // https://issues.dlang.org/show_bug.cgi?id=20129
+    @safe unittest
     {
         File[int] aa;
         aa.require(0, File.init);
@@ -605,7 +606,8 @@ Throws: `ErrnoException` in case of error.
         resetFile(name, stdioOpenmode, false);
     }
 
-    @system unittest // bugzilla 20585
+    // https://issues.dlang.org/show_bug.cgi?id=20585
+    @system unittest
     {
         File f;
         try
@@ -799,11 +801,17 @@ Throws: `ErrnoException` in case of error.
     }
 
 /**
-First calls `detach` (throwing on failure), and then attempts to
-associate the given file descriptor with the `File`. The mode must
-be compatible with the mode of the file descriptor.
+First calls `detach` (throwing on failure), then attempts to
+associate the given file descriptor with the `File`, and sets the file's name to `null`.
+
+The mode must be compatible with the mode of the file descriptor.
 
 Throws: `ErrnoException` in case of error.
+Params:
+    fd = File descriptor to associate with this `File`.
+    stdioOpenmode = Mode to associate with this File. The mode has the same semantics
+        semantics as in the C standard library
+        $(HTTP cplusplus.com/reference/cstdio/fopen/, fdopen) function, and must be compatible with `fd`.
  */
     void fdopen(int fd, scope const(char)[] stdioOpenmode = "rb") @safe
     {
@@ -915,9 +923,15 @@ Throws: `Exception` if the file is not opened.
         return .feof(cast(FILE*) _p.handle) != 0;
     }
 
-/** Returns the name of the last opened file, if any.
-If a `File` was created with $(LREF tmpfile) and $(LREF wrapFile)
-it has no name.*/
+/**
+ Returns the name last used to initialize this `File`, if any.
+
+ Some functions that create or initialize the `File` set the name field to `null`.
+ Examples include $(LREF tmpfile), $(LREF wrapFile), and $(LREF fdopen). See the
+ documentation of those functions for details.
+
+ Returns: The name last used to initialize this this file, or `null` otherwise.
+ */
     @property string name() const @safe pure nothrow
     {
         return _name;
@@ -935,7 +949,7 @@ the file handle.
 
     @safe unittest
     {
-        // Issue 12349
+        // https://issues.dlang.org/show_bug.cgi?id=12349
         static import std.file;
         auto deleteme = testFilename();
         auto f = File(deleteme, "w");
@@ -1037,7 +1051,7 @@ Throws: `Exception` if the file is not opened or if the call to `fflush` fails.
 
     @safe unittest
     {
-        // Issue 12349
+        // https://issues.dlang.org/show_bug.cgi?id=12349
         import std.exception : assertThrown;
         static import std.file;
 
@@ -1109,7 +1123,7 @@ Throws: `Exception` if `buffer` is empty.
             {
                 import core.atomic : atomicOp;
 
-                // @@@BUG@@@ 4243
+                // https://issues.dlang.org/show_bug.cgi?id=4243
                 immutable info = __fhnd_info[fd];
                 atomicOp!"&="(__fhnd_info[fd], ~FHND_TEXT);
                 scope(exit) __fhnd_info[fd] = info;
@@ -1165,7 +1179,7 @@ Throws: `ErrnoException` if the file is not opened or if the call to `fwrite` fa
             {
                 import core.atomic : atomicOp;
 
-                // @@@BUG@@@ 4243
+                // https://issues.dlang.org/show_bug.cgi?id=4243
                 immutable info = __fhnd_info[fd];
                 atomicOp!"&="(__fhnd_info[fd], ~FHND_TEXT);
                 scope(exit) __fhnd_info[fd] = info;
@@ -1932,7 +1946,8 @@ is recommended if you want to process a complete file.
         assert(buffer[beyond] == 'a');
     }
 
-    @system unittest // bugzilla 15293
+    // https://issues.dlang.org/show_bug.cgi?id=15293
+    @system unittest
     {
         // @system due to readln
         static import std.file;
@@ -2095,7 +2110,7 @@ $(CONSOLE
         f.readf("%s\n", &s);
         assert(s == "world", "["~s~"]");
 
-        // Issue 11698
+        // https://issues.dlang.org/show_bug.cgi?id=11698
         bool b1, b2;
         f.readf("%s\n%s\n", &b1, &b2);
         assert(b1 == true && b2 == false);
@@ -2116,13 +2131,14 @@ $(CONSOLE
         assert(s1 == "hello");
         assert(s2 == "world");
 
-        // Issue 11698
+        // https://issues.dlang.org/show_bug.cgi?id=11698
         bool b1, b2;
         f.readf("%s\n%s\n", &b1, b2);
         assert(b1 == true && b2 == false);
     }
 
-    // Issue 12260 - Nice error of std.stdio.readf with newlines
+    // Nice error of std.stdio.readf with newlines
+    // https://issues.dlang.org/show_bug.cgi?id=12260
     @system unittest
     {
         static import std.file;
@@ -2424,7 +2440,8 @@ the contents may well have changed).
         }}
     }
 
-    @system unittest // Issue 19980
+    // https://issues.dlang.org/show_bug.cgi?id=19980
+    @system unittest
     {
         static import std.file;
         auto deleteme = testFilename();
@@ -2615,7 +2632,7 @@ $(REF readText, std,file)
             }
             assert(i == witness.length, text(i, " != ", witness.length));
 
-            // Issue 11830
+            // https://issues.dlang.org/show_bug.cgi?id=11830
             auto walkedLength = File(deleteme).byLine(kt, term).walkLength;
             assert(walkedLength == witness.length, text(walkedLength, " != ", witness.length));
 
@@ -2675,7 +2692,7 @@ $(REF readText, std,file)
             auto file = File.tmpfile();
         file.write("1\n2\n3\n");
 
-        // bug 9599
+        // https://issues.dlang.org/show_bug.cgi?id=9599
         file.rewind();
         File.ByLineImpl!(char, char) fbl = file.byLine();
         auto fbl2 = fbl;
@@ -3222,7 +3239,7 @@ is empty, throws an `Exception`. In case of an I/O error throws
                 {
                     import core.atomic : atomicOp;
 
-                    // @@@BUG@@@ 4243
+                    // https://issues.dlang.org/show_bug.cgi?id=4243
                     oldInfo = __fhnd_info[fd];
                     atomicOp!"&="(__fhnd_info[fd], ~FHND_TEXT);
                 }
@@ -3242,7 +3259,7 @@ is empty, throws an `Exception`. In case of an I/O error throws
                 .fflush(fps); // before restoring translation mode
                 version (DIGITAL_MARS_STDIO)
                 {
-                    // @@@BUG@@@ 4243
+                    // https://issues.dlang.org/show_bug.cgi?id=4243
                     __fhnd_info[fd] = oldInfo;
                 }
                 ._setmode(fd, oldMode);
@@ -3588,8 +3605,10 @@ void main()
         writer.put("日本語"d);
         writer.put('日');
         writer.put(chain(only('本'), only('語')));
-        writer.put(repeat('#', 12)); // BUG 11945
-        writer.put(cast(immutable(ubyte)[])"日本語"); // Bug 17229
+        // https://issues.dlang.org/show_bug.cgi?id=11945
+        writer.put(repeat('#', 12));
+        // https://issues.dlang.org/show_bug.cgi?id=17229
+        writer.put(cast(immutable(ubyte)[])"日本語");
     }
     assert(File(deleteme).readln() == "日本語日本語日本語日本語############日本語");
 }
@@ -3648,7 +3667,7 @@ void main()
 
 version (StdStressTest)
 {
-    // issue 15768
+    // https://issues.dlang.org/show_bug.cgi?id=15768
     @system unittest
     {
         import std.parallelism : parallel;
@@ -3783,7 +3802,8 @@ struct LockingTextReader
     assert(x == 3);
 }
 
-@system unittest // bugzilla 13686
+// https://issues.dlang.org/show_bug.cgi?id=13686
+@system unittest
 {
     import std.algorithm.comparison : equal;
     static import std.file;
@@ -3801,7 +3821,8 @@ struct LockingTextReader
     assert(equal(ltr, "Тест".byDchar));
 }
 
-@system unittest // bugzilla 12320
+// https://issues.dlang.org/show_bug.cgi?id=12320
+@system unittest
 {
     static import std.file;
     auto deleteme = testFilename();
@@ -3815,7 +3836,8 @@ struct LockingTextReader
     assert(ltr.empty);
 }
 
-@system unittest // bugzilla 14861
+// https://issues.dlang.org/show_bug.cgi?id=14861
+@system unittest
 {
     // @system due to readf
     static import std.file;
@@ -3981,11 +4003,11 @@ void writeln(T...)(T args)
 
     if (false) writeln("wyda");
 
-    // bug 8040
+    // https://issues.dlang.org/show_bug.cgi?id=8040
     if (false) writeln(null);
     if (false) writeln(">", null, "<");
 
-    // Bugzilla 14041
+    // https://issues.dlang.org/show_bug.cgi?id=14041
     if (false)
     {
         char[8] a;
@@ -4027,9 +4049,9 @@ void writeln(T...)(T args)
 
     stdout.open(deleteme, "w");
     writeln("Hello!"c);
-    writeln("Hello!"w);    // bug 8386
-    writeln("Hello!"d);    // bug 8386
-    writeln("embedded\0null"c); // bug 8730
+    writeln("Hello!"w);    // https://issues.dlang.org/show_bug.cgi?id=8386
+    writeln("Hello!"d);    // https://issues.dlang.org/show_bug.cgi?id=8386
+    writeln("embedded\0null"c); // https://issues.dlang.org/show_bug.cgi?id=8730
     stdout.close();
     version (Windows)
         assert(cast(char[]) std.file.read(deleteme) ==
@@ -5535,7 +5557,8 @@ private size_t readlnImpl(FILE* fps, ref char[] buf, dchar terminator, File.Orie
     char[] t = ln[0 .. 2];
     t ~= 't';
     assert(t == "abt");
-    assert(ln == "abcd\n");  // bug 13856: ln stomped to "abtd"
+    // https://issues.dlang.org/show_bug.cgi?id=13856: ln stomped to "abtd"
+    assert(ln == "abcd\n");
 
     // it can also stomp the array length
     ln = new char[4];
@@ -5610,6 +5633,7 @@ version (StdUnittest) private string testFilename(string file = __FILE__, size_t
     import std.file : deleteme;
     import std.path : baseName;
 
-    // filename intentionally contains non-ASCII (Russian) characters for test Issue 7648
+    // filename intentionally contains non-ASCII (Russian) characters for
+    // https://issues.dlang.org/show_bug.cgi?id=7648
     return text(deleteme, "-детка.", baseName(file), ".", line);
 }

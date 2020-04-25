@@ -2070,7 +2070,7 @@ static if (is(sockaddr_un))
         Socket[2] pair;
 
         const basePath = deleteme;
-        auto names = [ basePath ~ "-unix-socket" ];
+        auto names = [ basePath ~ "-socket" ];
         version (linux)
             names ~= "\0" ~ basePath ~ "-abstract\0unix\0socket";
 
@@ -2551,7 +2551,9 @@ public:
     });
 }
 
-@safe unittest // Issue 14012, 14013
+// https://issues.dlang.org/show_bug.cgi?id=14012
+// https://issues.dlang.org/show_bug.cgi?id=14013
+@safe unittest
 {
     auto set = new SocketSet(1);
     assert(set.max >= 0);
@@ -3592,7 +3594,7 @@ class UdpSocket: Socket
     }
 }
 
-// Issue 16514
+// https://issues.dlang.org/show_bug.cgi?id=16514
 @safe unittest
 {
     class TestSocket : Socket

@@ -465,6 +465,7 @@ struct Region(ParentAllocator = NullAllocator,
     Mallocator.instance.deallocate(tmp);
 }
 
+version (StdUnittest)
 @system unittest
 {
     import std.experimental.allocator.mallocator : Mallocator;
@@ -522,6 +523,8 @@ struct InSituRegion(size_t size, size_t minAlign = platformAlignment)
     else version (HPPA) enum growDownwards = No.growDownwards;
     else version (PPC) enum growDownwards = Yes.growDownwards;
     else version (PPC64) enum growDownwards = Yes.growDownwards;
+    else version (RISCV32) enum growDownwards = Yes.growDownwards;
+    else version (RISCV64) enum growDownwards = Yes.growDownwards;
     else version (MIPS32) enum growDownwards = Yes.growDownwards;
     else version (MIPS64) enum growDownwards = Yes.growDownwards;
     else version (RISCV32) enum growDownwards = Yes.growDownwards;
