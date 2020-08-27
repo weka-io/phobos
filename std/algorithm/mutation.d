@@ -1400,7 +1400,7 @@ private T trustedMoveImpl(T)(ref T source) @trusted
     move(x, x);
 }
 
-private void moveEmplaceImpl(T)(ref T source, ref T target)
+private void moveEmplaceImpl(T)(ref T source, ref T target) pure
 {
     import core.stdc.string : memcpy, memset;
     import std.traits : hasAliasing, hasElaborateAssign,
